@@ -126,6 +126,8 @@ export async function POST(request: NextRequest) {
         improvement_plan_2: body.improvement_plan_2,
         improvement_plan_3: body.improvement_plan_3,
         competition_plans: body.competition_plans,
+        is_completed: true,
+        generated_at: new Date().toISOString(),
         user_id: userId,
       })
       .select()
