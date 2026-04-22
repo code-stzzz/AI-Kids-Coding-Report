@@ -1,0 +1,805 @@
+{
+  "user_email": "1932378682@qq.com",
+  "export_time": "2026-04-22",
+  "classes": [
+    {
+      "id": "4af00b44-746c-4125-932f-82c2fb2ad442",
+      "language_id": "lang-python",
+      "name": "测试班级",
+      "description": "11"
+    },
+    {
+      "id": "0cc3d629-3508-4d0b-adb7-dea34f9416fe",
+      "language_id": "lang-cpp",
+      "name": "python测试班级",
+      "description": "111"
+    },
+    {
+      "id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "language_id": "lang-python",
+      "name": "python4.2-周日10：00",
+      "description": "丁楚伦"
+    },
+    {
+      "id": "ff280ec8-ba9e-411a-93d4-3040813f41c3",
+      "language_id": "lang-cpp",
+      "name": "测试班级",
+      "description": "1"
+    },
+    {
+      "id": "89d89a3c-f0dc-4f35-9fea-d09c5133bf12",
+      "language_id": "lang-python",
+      "name": "python4.2-周日下午15：30",
+      "description": "杨宇宸 周星辰 方煜程 邓铭昊 毛梓博 孙盛榕"
+    },
+    {
+      "id": "633cec5d-7dd6-4701-bc24-550d976c5c45",
+      "language_id": "lang-python",
+      "name": "python4.2-周六15：30",
+      "description": "崔梓懿 吴越霆 刘丰祯 马茂维 任梓杭 袁姜宁 童润哲"
+    }
+  ],
+  "students": [
+    {
+      "id": "9119b527-04cd-439b-94cd-22f935559ea6",
+      "class_id": "4af00b44-746c-4125-932f-82c2fb2ad442",
+      "name": "小明",
+      "student_number": "1",
+      "learning_cycle": 1
+    },
+    {
+      "id": "07e2cf13-34f3-4c54-9e44-585813e79e42",
+      "class_id": "4af00b44-746c-4125-932f-82c2fb2ad442",
+      "name": "小黄",
+      "student_number": "2",
+      "learning_cycle": 1
+    },
+    {
+      "id": "9dc5f6d7-a123-46ba-ad57-c314e492d084",
+      "class_id": "4af00b44-746c-4125-932f-82c2fb2ad442",
+      "name": "小红",
+      "student_number": "3",
+      "learning_cycle": 1
+    },
+    {
+      "id": "30deab30-3a2c-46bc-ae19-4be445b0738d",
+      "class_id": "0cc3d629-3508-4d0b-adb7-dea34f9416fe",
+      "name": "小明",
+      "student_number": "1",
+      "learning_cycle": 1
+    },
+    {
+      "id": "e2d3df78-954a-4541-8252-c940367cdbdf",
+      "class_id": "0cc3d629-3508-4d0b-adb7-dea34f9416fe",
+      "name": "小王",
+      "student_number": "2",
+      "learning_cycle": 1
+    },
+    {
+      "id": "dabe595b-0564-4e63-abbd-82c5d709eda9",
+      "class_id": "0cc3d629-3508-4d0b-adb7-dea34f9416fe",
+      "name": "小黄",
+      "student_number": "3",
+      "learning_cycle": 1
+    },
+    {
+      "id": "f1393faa-4ad9-4c33-a5bd-6621e3dcb1a5",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "王俊皓",
+      "student_number": "1",
+      "learning_cycle": 1
+    },
+    {
+      "id": "5e8ec440-30bf-4f6a-b8e8-acb141c6b039",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "邵瀚阳",
+      "student_number": "2",
+      "learning_cycle": 1
+    },
+    {
+      "id": "c512ef5f-ed3c-4615-a52a-777501f7ca22",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "叶起",
+      "student_number": "3",
+      "learning_cycle": 1
+    },
+    {
+      "id": "27513335-2af6-452a-81af-1c2726417316",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "胡忠则",
+      "student_number": "4",
+      "learning_cycle": 1
+    },
+    {
+      "id": "9e42522f-602e-41da-9d3e-59e64cebc80b",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "吕修睿",
+      "student_number": "5",
+      "learning_cycle": 1
+    },
+    {
+      "id": "4149faa4-5d4d-4bbf-b9da-fb591088288c",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "丁楚伦",
+      "student_number": "6",
+      "learning_cycle": 1
+    },
+    {
+      "id": "32f80939-5502-4f32-83aa-1c0b553f2afd",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "孙恺懿添添",
+      "student_number": "7",
+      "learning_cycle": 1
+    },
+    {
+      "id": "2e3cc5a3-d07b-4acb-b5b1-fad0e9069382",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "吕涵宇",
+      "student_number": "8",
+      "learning_cycle": 1
+    },
+    {
+      "id": "db3593d7-e776-4607-a4f8-ef4f5dda90e5",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "李明宬",
+      "student_number": "9",
+      "learning_cycle": 1
+    },
+    {
+      "id": "7776a018-0a3e-4ffb-b9ca-4361ea0bf289",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "肖瑜凡",
+      "student_number": "10",
+      "learning_cycle": 1
+    },
+    {
+      "id": "0461c3f6-4cb4-4d7a-8d31-a87061da1699",
+      "class_id": "7b52ccac-0159-49a0-9860-6cd509637fd6",
+      "name": "杨懿彤",
+      "student_number": "11",
+      "learning_cycle": 1
+    },
+    {
+      "id": "bb841ed9-9aca-4677-b887-37efd711f6f5",
+      "class_id": "ff280ec8-ba9e-411a-93d4-3040813f41c3",
+      "name": "小明",
+      "student_number": "1",
+      "learning_cycle": 1
+    },
+    {
+      "id": "9d50715c-e7dd-4814-b018-594ce66e04df",
+      "class_id": "ff280ec8-ba9e-411a-93d4-3040813f41c3",
+      "name": "小红",
+      "student_number": "2",
+      "learning_cycle": 1
+    },
+    {
+      "id": "9cd790a7-ff83-4512-af5f-8617a3b50f7f",
+      "class_id": "ff280ec8-ba9e-411a-93d4-3040813f41c3",
+      "name": "小黄",
+      "student_number": "3",
+      "learning_cycle": 1
+    },
+    {
+      "id": "92fb83a7-483e-4a02-8778-95576b3dba09",
+      "class_id": "ff280ec8-ba9e-411a-93d4-3040813f41c3",
+      "name": "小亮",
+      "student_number": "4",
+      "learning_cycle": 1
+    },
+    {
+      "id": "66d9e9ec-e6d5-4e37-a4d5-edc7181a28a0",
+      "class_id": "89d89a3c-f0dc-4f35-9fea-d09c5133bf12",
+      "name": "杨宇宸",
+      "student_number": "1",
+      "learning_cycle": 1
+    },
+    {
+      "id": "b4f592cd-f68e-4e26-9d85-e8bdb91950c6",
+      "class_id": "89d89a3c-f0dc-4f35-9fea-d09c5133bf12",
+      "name": "周星辰",
+      "student_number": "2",
+      "learning_cycle": 1
+    },
+    {
+      "id": "d4486ac5-3485-4ee4-a13a-f338ea776c0a",
+      "class_id": "89d89a3c-f0dc-4f35-9fea-d09c5133bf12",
+      "name": "方煜程",
+      "student_number": "3",
+      "learning_cycle": 1
+    },
+    {
+      "id": "f9c9ec79-b375-49ef-9954-d65d7fa67f34",
+      "class_id": "89d89a3c-f0dc-4f35-9fea-d09c5133bf12",
+      "name": "邓铭昊",
+      "student_number": "4",
+      "learning_cycle": 1
+    },
+    {
+      "id": "03a7e306-2fda-4ccd-bad4-5d8eb8a7fe19",
+      "class_id": "89d89a3c-f0dc-4f35-9fea-d09c5133bf12",
+      "name": "毛梓博",
+      "student_number": "5",
+      "learning_cycle": 1
+    },
+    {
+      "id": "50690fce-fc87-4449-bb88-e1480aacc456",
+      "class_id": "89d89a3c-f0dc-4f35-9fea-d09c5133bf12",
+      "name": "孙盛榕",
+      "student_number": "6",
+      "learning_cycle": 1
+    },
+    {
+      "id": "e5bbae7a-644a-49d6-a482-240e85de08fe",
+      "class_id": "633cec5d-7dd6-4701-bc24-550d976c5c45",
+      "name": "崔梓懿",
+      "student_number": "1",
+      "learning_cycle": 1
+    },
+    {
+      "id": "4d1c0abb-4801-4740-b443-d9f9c19cf89b",
+      "class_id": "633cec5d-7dd6-4701-bc24-550d976c5c45",
+      "name": "吴越霆",
+      "student_number": "2",
+      "learning_cycle": 1
+    },
+    {
+      "id": "e3290932-4798-4723-a221-16da7d6b38cf",
+      "class_id": "633cec5d-7dd6-4701-bc24-550d976c5c45",
+      "name": "刘丰祯",
+      "student_number": "3",
+      "learning_cycle": 1
+    },
+    {
+      "id": "1d67130c-68ff-4880-9f6a-6810b6a45f48",
+      "class_id": "633cec5d-7dd6-4701-bc24-550d976c5c45",
+      "name": "马茂维",
+      "student_number": "4",
+      "learning_cycle": 1
+    },
+    {
+      "id": "5d5b49d9-65cf-439b-8ce5-7dc5ce036ec2",
+      "class_id": "633cec5d-7dd6-4701-bc24-550d976c5c45",
+      "name": "任梓杭",
+      "student_number": "5",
+      "learning_cycle": 1
+    },
+    {
+      "id": "401a60c6-7c90-4d5f-b34f-80895009cd2d",
+      "class_id": "633cec5d-7dd6-4701-bc24-550d976c5c45",
+      "name": "童润哲",
+      "student_number": "6",
+      "learning_cycle": 1
+    }
+  ],
+  "reports": [
+    {
+      "id": "a8eb6282-b2cb-42a2-a9cf-f8de51abb35f",
+      "student_id": "c512ef5f-ed3c-4615-a52a-777501f7ca22",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 7},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 6},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 6}
+      ],
+      "core_strengths": "课堂参与度是比较高，对于知识点理解的也比较快。",
+      "areas_to_improve": "但是在课堂上面偶尔会跑神。",
+      "progress_description": "叶起同学在本阶段Python U3单元的学习里有进步！从处理字符串的format、split函数，到for循环、二维列表这些新知识，叶起理解得都很快，代码逻辑、语法规范和问题排查这几项能力都表现出色。",
+      "improvement_description": "叶起目前在课堂专注力上还有提升空间，偶尔会在课程后半段悄悄跑神，错过一些拓展小细节。",
+      "encouragement_message": "叶起你本身对编程的接受度和领悟力都很棒，就像已经攒好了满盒好用的工具，只差慢慢把它们摆得更整齐就能搭出更酷的作品。",
+      "competition_plans": "2026年5月-直接参加蓝桥杯4-6级考试",
+      "improvement_plan_1": "可以在有空的时候在家练习习题，每周2-3道题目，保持手感",
+      "improvement_plan_2": "多做代码调试，增加问题排查解决",
+      "improvement_plan_3": "参加ACGO里面的嘻哈赛"
+    },
+    {
+      "id": "cb09fb86-bd4a-4cb4-9cd8-2baf7fa53f22",
+      "student_id": "32f80939-5502-4f32-83aa-1c0b553f2afd",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 8},
+        {"name": "语法规范运用", "score": 8},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 7},
+        {"name": "创意拓展实现", "score": 8},
+        {"name": "知识点复用能力", "score": 8}
+      ],
+      "core_strengths": "整体的知识点掌握还是非常不错的，知识记忆非常清晰，能够自己独立的进行应用",
+      "areas_to_improve": "课堂上写代码的时候偶尔跑神，写代码的速度会比较慢。",
+      "progress_description": "孙恺懿添添同学在本阶段U3的Python学习里整体表现真的太亮眼啦！",
+      "improvement_description": "孙恺懿添添目前在写代码的节奏上还有提升空间。",
+      "encouragement_message": "孙恺懿添添，你对编程知识点的吸收能力就像小海绵吸水一样扎实又高效。",
+      "competition_plans": "2026年5月-蓝桥等考7-9级",
+      "improvement_plan_1": "加强对于循环嵌套的练习",
+      "improvement_plan_2": "参加ACGO里面的嘻哈赛",
+      "improvement_plan_3": "每次可以在完成题目后梳理一下自己的出现错误的知识点"
+    },
+    {
+      "id": "6f291670-e570-446d-a531-c5cd73b79855",
+      "student_id": "7776a018-0a3e-4ffb-b9ca-4361ea0bf289",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 7},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 6},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 7}
+      ],
+      "core_strengths": "对于知识点理解比较快，编程题目的解决能力有提高",
+      "areas_to_improve": "课堂上偶尔会跑神",
+      "progress_description": "肖瑜凡同学在本阶段U3 Python的学习中进步明显！",
+      "improvement_description": "肖瑜凡在课堂专注度方面还有提升空间。",
+      "encouragement_message": "肖瑜凡，你本身有着很强的逻辑天赋，学新知识快又能扎实掌握。",
+      "competition_plans": "2026年4月-参加蓝桥等考3级考试",
+      "improvement_plan_1": "坚持练习ACGO题目",
+      "improvement_plan_2": "参加ACGO里面的嘻哈赛",
+      "improvement_plan_3": ""
+    },
+    {
+      "id": "f4b9ccc3-215f-475d-b81d-3bae835b4ba8",
+      "student_id": "27513335-2af6-452a-81af-1c2726417316",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 6},
+        {"name": "语法规范运用", "score": 6},
+        {"name": "问题排查解决", "score": 5},
+        {"name": "课堂专注参与", "score": 6},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 5}
+      ],
+      "core_strengths": "在小讲师环节，现在主动且非常愿意上台讲解。",
+      "areas_to_improve": "对于编程题会存在一些畏难情绪，对于编程题不愿意动手。",
+      "progress_description": "胡忠则同学在本阶段U3 Python的学习进步明显哦！",
+      "improvement_description": "胡忠则在遇到稍复杂的编程大题时，还有提升空间。",
+      "encouragement_message": "胡忠则，你已经悄悄攒了这么多编程本领，还鼓起勇气站上小讲台分享，这份成长已经足够耀眼啦。",
+      "competition_plans": "2026年4月下旬-蓝桥等考5级,2626年5月-蓝桥等考6级",
+      "improvement_plan_1": "登录ACGO要继续坚持刷题，每周2-3道题目",
+      "improvement_plan_2": "可以参加ACGO里面的嘻哈赛",
+      "improvement_plan_3": ""
+    },
+    {
+      "id": "c6ed6c2b-2e4e-4fc7-86bc-7573ebe36ae2",
+      "student_id": "9e42522f-602e-41da-9d3e-59e64cebc80b",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 6},
+        {"name": "语法规范运用", "score": 5},
+        {"name": "问题排查解决", "score": 4},
+        {"name": "课堂专注参与", "score": 4},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 5}
+      ],
+      "core_strengths": "在小讲师方面，表现非常不错，小讲师的声音非常洪亮，且讲解的非常透彻。",
+      "areas_to_improve": "课堂上专注力不集中，代码的语法部分还需要练习。",
+      "progress_description": "吕修睿同学在本阶段Python U3的学习里在表达方面有进步。",
+      "improvement_description": "吕修睿在课堂专注度和问题排查这两个方面还有提升空间。",
+      "encouragement_message": "吕修睿，你站在讲台上当小讲师的样子特别有光芒，就像小程序员在发光一样。",
+      "competition_plans": "2026年4月，ACGO平台练习5级赛考题目",
+      "improvement_plan_1": "每周在ACGO平台练习1-3道题目",
+      "improvement_plan_2": "可以尝试在ACGO平台参加嘻哈赛，提升实战能力",
+      "improvement_plan_3": ""
+    },
+    {
+      "id": "00d7987f-3b86-440a-a0a0-1fe047274f82",
+      "student_id": "2e3cc5a3-d07b-4acb-b5b1-fad0e9069382",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 6},
+        {"name": "问题排查解决", "score": 6},
+        {"name": "课堂专注参与", "score": 6},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 5}
+      ],
+      "core_strengths": "课堂上比较听话，在代码完成速度上面不错",
+      "areas_to_improve": "课堂上面会偶尔跑神，错过一些知识点，编程题练习上会存在一点惰性。",
+      "progress_description": "吕涵宇同学在本阶段U3 Python的学习中进步明显，整体表现很不错哦。",
+      "improvement_description": "吕涵宇在本阶段学习中还有一些提升空间哦。",
+      "encouragement_message": "吕涵宇，你本身逻辑感很好，接收新知识的速度也比很多小朋友快。",
+      "competition_plans": "2026年6月参加4-6级蓝桥等考",
+      "improvement_plan_1": "坚持在ACGO上面的练习题目，每周1-3道编程题",
+      "improvement_plan_2": "勇于尝试编程题目的练习",
+      "improvement_plan_3": "参加ACGO里面的嘻哈赛"
+    },
+    {
+      "id": "b2180e2a-3973-40c4-95fb-eece0bb4fc1b",
+      "student_id": "db3593d7-e776-4607-a4f8-ef4f5dda90e5",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 8},
+        {"name": "语法规范运用", "score": 8},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 7},
+        {"name": "创意拓展实现", "score": 7},
+        {"name": "知识点复用能力", "score": 7}
+      ],
+      "core_strengths": "对于知识点的掌握比较扎实，对于知识点记忆比较清晰",
+      "areas_to_improve": "对于知识点的应用方面还需要加强。",
+      "progress_description": "李明宬同学在本阶段U3 Python的学习里，整体进步明显，六项能力全都表现出色哦！",
+      "improvement_description": "李明宬目前在知识点的灵活应用方面还有提升空间哦。",
+      "encouragement_message": "李明宬你对知识点扎实的掌握，已经给后续的Python学习搭好了稳稳的台阶。",
+      "competition_plans": "2026年4月-参加蓝桥等考5级,2026年5月-参加蓝桥等考6级",
+      "improvement_plan_1": "坚持练习ACGO题库中的题目",
+      "improvement_plan_2": "多梳理做过的题目，提高知识点复用",
+      "improvement_plan_3": "参加ACGO里面的嘻哈赛"
+    },
+    {
+      "id": "e9e8fe8e-65d9-4c49-a973-8ccd4ffe50f4",
+      "student_id": "0461c3f6-4cb4-4d7a-8d31-a87061da1699",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 6},
+        {"name": "语法规范运用", "score": 7},
+        {"name": "问题排查解决", "score": 6},
+        {"name": "课堂专注参与", "score": 7},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 6}
+      ],
+      "core_strengths": "课堂上完成代码是比较完成迅速的，小讲师的讲解的非常有逻辑，讲解状态和效果很好。",
+      "areas_to_improve": "在知识点的应用上面还需要加强练习。刷编程题的时候会有一些抵触和畏难。",
+      "progress_description": "杨懿彤同学在本阶段U3 Python的学习里有进步。",
+      "improvement_description": "杨懿彤在知识点的灵活应用上还有提升空间哦。",
+      "encouragement_message": "杨懿彤，你当小讲师时清晰有条理的模样，老师一直记在心里。",
+      "competition_plans": "2026年4月-参加蓝桥等考3级",
+      "improvement_plan_1": "参加ACGO平台的嘻哈赛",
+      "improvement_plan_2": "每周抽出一点时间，练习1-3道编程题的练习",
+      "improvement_plan_3": ""
+    },
+    {
+      "id": "085dbb82-7a99-440d-972c-3c5b716c770e",
+      "student_id": "4149faa4-5d4d-4bbf-b9da-fb591088288c",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 8},
+        {"name": "语法规范运用", "score": 8},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 7},
+        {"name": "创意拓展实现", "score": 7},
+        {"name": "知识点复用能力", "score": 8}
+      ],
+      "core_strengths": "在本单元知识点掌握牢固，课堂上回答问题非常积极。",
+      "areas_to_improve": "但是在题目的做题的时候，还需要多加审题。",
+      "progress_description": "丁楚伦同学在本阶段U3 Python的学习里进步明显，表现真的太亮眼了。",
+      "improvement_description": "丁楚伦目前在做题审题方面还有提升空间。",
+      "encouragement_message": "丁楚伦，你这一单元全优的表现，就像你写出来的整齐代码一样亮眼。",
+      "competition_plans": "2026年5月-参加蓝桥等考6级",
+      "improvement_plan_1": "坚持练习ACGO里面的题目",
+      "improvement_plan_2": "多做一下调试练习，培养问题排查能力",
+      "improvement_plan_3": "参加ACGO平台上的嘻哈赛"
+    },
+    {
+      "id": "fbde71ef-8b62-4659-a73e-0dc2e40c39b6",
+      "student_id": "5e8ec440-30bf-4f6a-b8e8-acb141c6b039",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 8},
+        {"name": "语法规范运用", "score": 8},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 8},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 7}
+      ],
+      "core_strengths": "对于代码掌握不错，课堂的专注力不错，对于题目理解比较快",
+      "areas_to_improve": "在做题目的思路灵活应用上面还需要多加练习",
+      "progress_description": "邵瀚阳同学在本阶段U3 Python的学习里进步明显，整体表现出色。",
+      "improvement_description": "邵瀚阳现在在做题思路的灵活变通方面还有提升空间。",
+      "encouragement_message": "邵瀚阳你这一阶段的稳扎稳打老师都看在眼里，你就像已经攒好了一整盒好用的编程工具。",
+      "competition_plans": "可以参加蓝桥等考五级的考试",
+      "improvement_plan_1": "根据知识点列表梳理自己没有掌握的知识点",
+      "improvement_plan_2": "空闲时间可以登录ACGO平台练习刷题",
+      "improvement_plan_3": "多参加一下ACGO平台的嘻哈赛"
+    },
+    {
+      "id": "bc3936b7-a72e-44c1-a5de-096d292d0002",
+      "student_id": "bb841ed9-9aca-4677-b887-37efd711f6f5",
+      "course_unit_id": "7cda91e6-d5b9-4627-b374-b8945f1a7067",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 8},
+        {"name": "语法规范运用", "score": 8},
+        {"name": "问题排查解决", "score": 8},
+        {"name": "课堂专注参与", "score": 8},
+        {"name": "创意拓展实现", "score": 8},
+        {"name": "知识点复用能力", "score": 8}
+      ],
+      "core_strengths": "小明同学在本阶段U2单元C++的学习里进步明显！",
+      "areas_to_improve": "小明目前在不同数据类型混合运算的场景转换梳理方面还有提升空间",
+      "progress_description": "小明同学在本阶段U2单元C++的学习里进步明显哦！六维能力全都是表现出色。",
+      "improvement_description": "建议小明每次做完练习之后，花两分钟把用到的类型转换步骤手写梳理一遍。",
+      "encouragement_message": "小明这一单元全维度的出色表现，老师都看在眼里记在心里。",
+      "competition_plans": "11",
+      "improvement_plan_1": "11",
+      "improvement_plan_2": "11",
+      "improvement_plan_3": "1"
+    },
+    {
+      "id": "90f473c3-eb59-4778-bfd9-e73314f80f92",
+      "student_id": "66d9e9ec-e6d5-4e37-a4d5-edc7181a28a0",
+      "course_unit_id": "67859911-bcc9-4050-b175-3fc2ebc9c816",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 6},
+        {"name": "问题排查解决", "score": 6},
+        {"name": "课堂专注参与", "score": 7},
+        {"name": "创意拓展实现", "score": 7},
+        {"name": "知识点复用能力", "score": 6}
+      ],
+      "core_strengths": "在课堂上的专注力相比之前有很大的进步，还要继续保持，特别是课堂上对于题目的回答很积极。完成家庭作业和课后题目非常的积极且迅速",
+      "areas_to_improve": "还是要继续坚持练习题目，在家多多练习题目。",
+      "progress_description": "杨宇宸同学在本阶段U5 Python的学习中进步明显哦！",
+      "improvement_description": "杨宇宸目前在知识点的灵活复用和问题排查方面还有提升空间。",
+      "encouragement_message": "杨宇宸，这一阶段你主动又投入的学习模样老师都看在眼里。",
+      "competition_plans": "2026年4月-参加蓝桥等考4级。2026年5月-参加蓝桥等考5级。",
+      "improvement_plan_1": "坚持练习ACGO里面的题目",
+      "improvement_plan_2": "参加ACGO里面的嘻哈赛",
+      "improvement_plan_3": ""
+    },
+    {
+      "id": "84133303-719c-4fe0-8dcd-1d37e17cd51e",
+      "student_id": "b4f592cd-f68e-4e26-9d85-e8bdb91950c6",
+      "course_unit_id": "67859911-bcc9-4050-b175-3fc2ebc9c816",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 6},
+        {"name": "问题排查解决", "score": 6},
+        {"name": "课堂专注参与", "score": 8},
+        {"name": "创意拓展实现", "score": 7},
+        {"name": "知识点复用能力", "score": 7}
+      ],
+      "core_strengths": "课堂上的专注力很高，很明显的进步是在小讲师的时候，相比于开始更加的自信，且更愿意做小讲师",
+      "areas_to_improve": "理解知识点上面相对来说比较慢，还需要坚持的练习题目。",
+      "progress_description": "周星辰同学在本阶段U5 Python的学习里进步明显。",
+      "improvement_description": "周星辰在知识点消化理解的节奏上还有提升空间。",
+      "encouragement_message": "周星辰你知道吗？你敢站上讲台当小讲师分享的勇气，比写出完美代码更可贵。",
+      "competition_plans": "2026年4月-参加蓝桥等考4级",
+      "improvement_plan_1": "每周课前复盘上周知识点代码，理清理解卡壳的地方",
+      "improvement_plan_2": "每次课后把课堂讲的题目思路讲解一遍",
+      "improvement_plan_3": "坚持在ACGO上练习题目"
+    },
+    {
+      "id": "42ce59e8-ba70-48c3-adcc-24c90081df12",
+      "student_id": "d4486ac5-3485-4ee4-a13a-f338ea776c0a",
+      "course_unit_id": "67859911-bcc9-4050-b175-3fc2ebc9c816",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 7},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 6},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 7}
+      ],
+      "core_strengths": "对于本单元循环嵌套的知识点理解的非常的快",
+      "areas_to_improve": "课堂上的专注力持续时间还要加强，以及完成题目的时候需要细心",
+      "progress_description": "方煜程同学在本阶段U5的Python学习里整体表现出色哦！",
+      "improvement_description": "方煜程目前在课堂专注力持续度和做题细心度上还有提升空间哦。",
+      "encouragement_message": "方煜程，你对编程逻辑的敏感度就像夜空中自带光芒的星星。",
+      "competition_plans": "2026年4月-6月：蓝桥stema省赛备赛阶段",
+      "improvement_plan_1": "完成代码后逐行检查变量命名和缩进，培养细心习惯",
+      "improvement_plan_2": "每节课拆分2个小小任务，完成任务，成就感驱动延长专注时长",
+      "improvement_plan_3": "虽然完成了蓝桥18级赛考，但是依然要坚持在ACGO平台练习5-8级的题目"
+    },
+    {
+      "id": "c0d15d8d-f2f3-44b1-b356-7987f3426c01",
+      "student_id": "f9c9ec79-b375-49ef-9954-d65d7fa67f34",
+      "course_unit_id": "67859911-bcc9-4050-b175-3fc2ebc9c816",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 6},
+        {"name": "语法规范运用", "score": 7},
+        {"name": "问题排查解决", "score": 6},
+        {"name": "课堂专注参与", "score": 6},
+        {"name": "创意拓展实现", "score": 7},
+        {"name": "知识点复用能力", "score": 6}
+      ],
+      "core_strengths": "当前课堂上的专注力，专注的时间有增加，但是还需要继续加油。逻辑思维上面有提升。",
+      "areas_to_improve": "在课堂上还需要继续保持专注，以及的坚持练习题目。",
+      "progress_description": "邓铭昊同学在本阶段U5 Python的学习里进步明显哦！",
+      "improvement_description": "邓铭昊目前在课堂专注力的持续性和课后练习坚持上还有提升空间哦。",
+      "encouragement_message": "邓铭昊你看，专注时间变长、逻辑变清晰这些进步，都是你一点点攒出来的小收获哦。",
+      "competition_plans": "2026年下半年，学习信奥C++的学习。",
+      "improvement_plan_1": "每次写完代码后，逐行检查语法和变量作用域，巩固知识点",
+      "improvement_plan_2": "每节课给自己设定小目标，坚持整节课大半时间专注听讲",
+      "improvement_plan_3": "坚持在ACGO平台进行题目练习"
+    },
+    {
+      "id": "0a8ca3d5-9abd-49e0-ac58-e291f7d94c57",
+      "student_id": "03a7e306-2fda-4ccd-bad4-5d8eb8a7fe19",
+      "course_unit_id": "67859911-bcc9-4050-b175-3fc2ebc9c816",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 6},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 5},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 6}
+      ],
+      "core_strengths": "在蓝桥等考三级题目上完成的速度非常的快，且有在坚持练习题目刷题。理解能力是比较快的",
+      "areas_to_improve": "在课堂的专注力方面还需要注意",
+      "progress_description": "毛梓博同学在本阶段U5Python的学习里进步明显。",
+      "improvement_description": "毛梓博在课堂专注力方面还有提升空间。",
+      "encouragement_message": "毛梓博，你对编程的接受度和感悟力就像小种子攒够了力气发芽。",
+      "competition_plans": "2026年5月-蓝桥等考5级",
+      "improvement_plan_1": "每次写完代码后逐行检查语法，养成标注注释的小习惯",
+      "improvement_plan_2": "每节课主动记录3个知识点，分心时举手提问拉回注意力",
+      "improvement_plan_3": "坚持练习ACGO里面的编程题目"
+    },
+    {
+      "id": "d0d3f50a-3271-4934-b3c8-7d64856e7f40",
+      "student_id": "50690fce-fc87-4449-bb88-e1480aacc456",
+      "course_unit_id": "67859911-bcc9-4050-b175-3fc2ebc9c816",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 7},
+        {"name": "问题排查解决", "score": 6},
+        {"name": "课堂专注参与", "score": 7},
+        {"name": "创意拓展实现", "score": 7},
+        {"name": "知识点复用能力", "score": 7}
+      ],
+      "core_strengths": "在知识点掌握方面扎实的很多，有坚持练习题目， 表现很不错。",
+      "areas_to_improve": "课堂上偶尔会开小差",
+      "progress_description": "孙盛榕同学在本阶段Python U5的学习中进步明显。",
+      "improvement_description": "孙盛榕目前在课堂专注度方面还有提升空间。",
+      "encouragement_message": "孙盛榕，你这段时间稳扎稳打的积累就像在攒搭积木的小块，每一块都放得扎扎实实。",
+      "competition_plans": "2026年5月-为gesp，CPA考级进行备赛准备。",
+      "improvement_plan_1": "写完代码后逐行检查变量作用域，巩固排查问题的能力",
+      "improvement_plan_2": "课堂上每20分钟主动举手回答一次问题，维持专注状态",
+      "improvement_plan_3": "坚持在ACGO平台去练习5-7级题目"
+    },
+    {
+      "id": "dd69f192-c7c9-4a95-aed6-2cd74a72a53a",
+      "student_id": "e5bbae7a-644a-49d6-a482-240e85de08fe",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 9},
+        {"name": "语法规范运用", "score": 9},
+        {"name": "问题排查解决", "score": 8},
+        {"name": "课堂专注参与", "score": 8},
+        {"name": "创意拓展实现", "score": 7},
+        {"name": "知识点复用能力", "score": 8}
+      ],
+      "core_strengths": "对于案例的时间往往能够自己通过所学知识尝试完成课堂案例，题目更快有解题思路",
+      "areas_to_improve": "完成题目的时候可以尝试不同的方法完成",
+      "progress_description": "崔梓懿同学在本阶段U3 Python的学习中进步明显，表现出色。",
+      "improvement_description": "崔梓懿在完成编程任务的时候，其实已经能很顺畅地解决问题啦。",
+      "encouragement_message": "崔梓懿你知道吗？能主动独立推导解题思路的你，已经走在了很多小朋友的前面。",
+      "competition_plans": "2026年-5月蓝桥等考7级/8级,2026年6月蓝桥等考9级",
+      "improvement_plan_1": "每次完成课后题目后，尝试用另一种方法写一遍代码",
+      "improvement_plan_2": "课堂上遇到新问题时，主动分享你的不同思路给老师和同学",
+      "improvement_plan_3": "ACGO刷题坚持下去"
+    },
+    {
+      "id": "2f40e3f2-343f-4211-a245-15198cbd353b",
+      "student_id": "4d1c0abb-4801-4740-b443-d9f9c19cf89b",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 6},
+        {"name": "语法规范运用", "score": 6},
+        {"name": "问题排查解决", "score": 6},
+        {"name": "课堂专注参与", "score": 7},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 5}
+      ],
+      "core_strengths": "对于代码的逻辑掌握的还不错，在写题目的正确度和思路上面会更快一些。课堂的专注度和参与度比较高",
+      "areas_to_improve": "对于知识点的遗漏的知识点，可以做一个笔记。",
+      "progress_description": "吴越霆同学在本阶段U3 Python的学习里进步明显。",
+      "improvement_description": "吴越霆在本阶段的学习里还有提升空间，目前偶尔会有部分较早学习的知识点出现记忆模糊的情况。",
+      "encouragement_message": "带着这份专属学习记录，吴越霆你已经稳稳走过了U3 Python从一维到多维数据处理的进阶之路。",
+      "competition_plans": "2026年5-6月 - 练习ACGO平台的4-6级题目，参加平台嘻哈赛",
+      "improvement_plan_1": "每次学习新知识点后整理函数与语法要点，补记遗漏内容",
+      "improvement_plan_2": "每周抽5分钟翻看自己整理的编程笔记，巩固记忆",
+      "improvement_plan_3": "可以去ACGO平台刷4-6级题目，巩固U3知识点"
+    },
+    {
+      "id": "0206dc93-a228-4c4d-8899-95d3c246736d",
+      "student_id": "e3290932-4798-4723-a221-16da7d6b38cf",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 6},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 6},
+        {"name": "创意拓展实现", "score": 7},
+        {"name": "知识点复用能力", "score": 6}
+      ],
+      "core_strengths": "对于知识点的理解比较迅速，课堂上回答问题更加积极",
+      "areas_to_improve": "在课堂上的专注力还需要提高，对于知识点的应用要更灵活一点。",
+      "progress_description": "刘丰祯同学在本阶段U3 Python的学习里进步明显。",
+      "improvement_description": "刘丰祯在知识点灵活应用和课堂专注力方面还有提升空间。",
+      "encouragement_message": "刘丰祯，编号8199属于你这次独有的成长记录里，每一次你拆解项目难题、排查代码bug的过程，都是在帮自己搭建更稳的编程地基。",
+      "competition_plans": "2026年5月下旬参加4-6级考试",
+      "improvement_plan_1": "做完项目后尝试换一种思路重写功能，锻炼知识点灵活调用能力",
+      "improvement_plan_2": "每节课主动举手回答至少一个问题，帮自己维持课堂专注力",
+      "improvement_plan_3": "可以去ACGO平台刷4-6级的题目"
+    },
+    {
+      "id": "6f5049e4-7aef-4dd5-b0dc-7f2c93299d70",
+      "student_id": "1d67130c-68ff-4880-9f6a-6810b6a45f48",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 7},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 7},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 6}
+      ],
+      "core_strengths": "在课堂上的专注度相比于之前有进步，在做编程题目的时候思路更加清晰。",
+      "areas_to_improve": "但是对于知识点的应用不够灵活，还需要加强训练",
+      "progress_description": "马茂维同学在本阶段U3 Python的学习里进步明显。",
+      "improvement_description": "马茂维在知识点灵活复用和创意拓展方面还有提升空间。",
+      "encouragement_message": "马茂维就像园圃里一株正在抽枝的小桃树，每一节新学的知识点都是一片舒展的新叶。",
+      "competition_plans": "2026年4月-蓝桥等考4级,2026年5月-蓝桥等考5级",
+      "improvement_plan_1": "每次完成新项目后，尝试加入1个之前学过的旧知识点",
+      "improvement_plan_2": "做完项目后主动梳理用到的所有知识点，整理成笔记",
+      "improvement_plan_3": "去ACGO平台刷4-5级题，巩固知识点复用能力"
+    },
+    {
+      "id": "57f2d6ba-a1bc-4883-9742-ac409d425d14",
+      "student_id": "5d5b49d9-65cf-439b-8ce5-7dc5ce036ec2",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 8},
+        {"name": "语法规范运用", "score": 7},
+        {"name": "问题排查解决", "score": 7},
+        {"name": "课堂专注参与", "score": 6},
+        {"name": "创意拓展实现", "score": 7},
+        {"name": "知识点复用能力", "score": 7}
+      ],
+      "core_strengths": "课堂上对于列表和字符串的操作的知识点掌握还不错，解决题目的思路更加清晰。",
+      "areas_to_improve": "课堂上的偶尔会跑神，还需要加强",
+      "progress_description": "任梓杭同学在本阶段U3 Python的学习中进步明显，表现出色。从字符串的format、split函数操作，到for循环、列表更新，再到最后挑战二维列表嵌套的益智24点项目，知识点都掌握扎实。代码逻辑、语法规范、问题排查都表现优秀，做项目时解决问题的思路比之前清晰太多了，创意拓展和知识点复用也做得很好。",
+      "improvement_description": "任梓杭在课堂专注度方面还有提升空间，偶尔会在课堂后半段悄悄跑神，错过一些项目拓展的小细节。其实只要把注意力稍微多稳住一小会儿就能吸收更多内容，咱们可以试试每节课给自己定一个小目标，主动举手回答一次问题，慢慢就能把专注的时间拉长，继续加强课堂投入就能收获更多啦。",
+      "encouragement_message": "古人说"绳锯木断，水滴石穿"，梓杭已经一步步把字符串、列表这些核心知识点啃了下来，每一次调试代码都是在为自己的编程能力积攒力量，那些琢磨透的逻辑会慢慢变成你解决问题的底气。",
+      "competition_plans": "2026年5月-可以参加蓝桥等考3级\n2026年6月-可以参加蓝桥等考6级",
+      "improvement_plan_1": "每次写完代码后对照知识点复盘一遍逻辑链路，巩固基础",
+      "improvement_plan_2": "每节课主动举手发言一次，帮助自己维持课堂专注状态",
+      "improvement_plan_3": "可以去ACGO平台刷二维列表相关题目，巩固当前知识点"
+    },
+    {
+      "id": "c3b1dbb0-b46e-430e-8238-b65efb1e0ffa",
+      "student_id": "401a60c6-7c90-4d5f-b34f-80895009cd2d",
+      "course_unit_id": "de76fc47-7368-4dcb-826d-398fa0f33e00",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 7},
+        {"name": "语法规范运用", "score": 6},
+        {"name": "问题排查解决", "score": 6},
+        {"name": "课堂专注参与", "score": 6},
+        {"name": "创意拓展实现", "score": 6},
+        {"name": "知识点复用能力", "score": 5}
+      ],
+      "core_strengths": "课堂上小讲师讲解的知识点非常的自信流利。",
+      "areas_to_improve": "课堂上的偶尔会走神，",
+      "progress_description": "童润哲同学在本阶段Python U3单元的学习进步明显，从format字符串处理到二维列表嵌套这些知识点都掌握扎实，尤其是做益智24点、智能棋手这些项目的时候，代码逻辑表现还不错。最让人惊喜的是童润哲站上小讲师讲台讲解知识点的时候，自信又流利，把for循环嵌套的逻辑讲得清清楚楚，整个人的状态特别好。",
+      "improvement_description": "童润哲在课堂专注度方面还有提升空间，偶尔会在课程后半段走神，错过一些项目调试的细节提示，在问题排查的时候偶尔要多花一点时间理清楚思路。童润哲本身接受能力很强，只要能把专注度再稳定一点，知识点的掌握还能更扎实，课后做项目的时候也会更顺畅，可以继续加强课堂状态的调整。",
+      "encouragement_message": "童润哲愿意站在讲台上把自己学会的知识讲给大家听，这份敢于展示自己的勇气，已经帮你攻克了学习路上的第一个小关卡。你能把复杂的循环逻辑梳理清楚讲明白，就说明你已经拥有了拆解难题的能力，每一次直面知识点的挑战，都是在为你之后更复杂的项目积攒底气。",
+      "competition_plans": "2026年-5月可以参加蓝桥等考3级",
+      "improvement_plan_1": "每次写完代码后，逐行检查语法规范，培养排查小问题的习惯",
+      "improvement_plan_2": "课堂上如果感到疲惫，可以举手示意起身活动半分钟再继续",
+      "improvement_plan_3": "可以去ACGO平台3-4级的题目，巩固知识点"
+    },
+    {
+      "id": "a5044118-031c-4175-b795-b8e59599ead2",
+      "student_id": "30deab30-3a2c-46bc-ae19-4be445b0738d",
+      "course_unit_id": "fd8fe0e0-f807-4879-a211-866a0b4f555d",
+      "radar_dimensions": [
+        {"name": "代码逻辑掌握", "score": 8},
+        {"name": "语法规范运用", "score": 8},
+        {"name": "问题排查解决", "score": 8},
+        {"name": "课堂专注参与", "score": 8},
+        {"name": "创意拓展实现", "score": 8},
+        {"name": "知识点复用能力", "score": 8}
+      ],
+      "core_strengths": "11",
+      "areas_to_improve": "11",
+      "progress_description": "小明同学在本阶段C++U1的学习里进步明显，从最开始搭建开发环境，到最后独立写出简单计算器的完整代码，每一步都走得很扎实。六项能力全都是表现优秀，不管是main函数的结构、不同数据类型的区分，还是输入输出的格式控制，小明都掌握得很好，做综合项目的时候还主动优化了自己的代码规范，课堂参与度也特别高，整体表现出色。",
+      "improvement_description": "小明在处理复杂运算表达式的嵌套优先级问题时还有提升空间，有时候遇到多层括号和不同运算符混合的情况，会不小心搞混顺序。接下来可以继续加强拆分复杂表达式的练习，每次写代码的时候把每一步运算的顺序理清楚再动手，多加练习之后就能更从容地应对这类问题了。",
+      "encouragement_message": "你靠着自己的细致和耐心，把C++入门的所有基础知识点啃得扎扎实实，还独立完成了属于你的第一个小工具计算器。接下来深入探索数据类型的世界时，你这份认真会帮你解锁更多编程的新乐趣，你已经为后续的学习铺好了最稳的路。",
+      "competition_plans": "11",
+      "improvement_plan_1": "每次遇到复杂表达式，拆分步骤逐步计算，梳理运算优先级",
+      "improvement_plan_2": "做完项目后花2分钟通读代码，自己检查一遍运算逻辑",
+      "improvement_plan_3": "可以去ACGO平台刷表达式求值类题目巩固U1优先级知识点"
+    }
+  ]
+}

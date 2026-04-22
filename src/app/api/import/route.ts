@@ -43,6 +43,18 @@ function getSupabaseAdminClient() {
   });
 }
 
+// 课程单元 ID 映射（旧ID -> 新ID）
+const COURSE_UNIT_ID_MAPPING: Record<string, string> = {
+  // Python U3
+  'de76fc47-7368-4dcb-826d-398fa0f33e00': 'cu-python-u3',
+  // C++ U2
+  '7cda91e6-d5b9-4627-b374-b8945f1a7067': 'cu-cpp-u2',
+  // Python U5
+  '67859911-bcc9-4050-b175-3fc2ebc9c816': 'cu-python-u5',
+  // C++ U1
+  'fd8fe0e0-f807-4879-a211-866a0b4f555d': 'cu-cpp-u1',
+};
+
 // 批量导入数据
 export async function POST(request: NextRequest) {
   try {
@@ -117,12 +129,21 @@ export async function POST(request: NextRequest) {
     // 3. 导入学习报告
     if (body.reports && Array.isArray(body.reports)) {
       for (const report of body.reports) {
+        // 映射课程单元 ID
+        const mappedCourseUnitId = COURSE_UNIT_ID_MAPPING[report.course_unit_id] || report.course_unit_id;
+        
         // 从课程单元获取 language_id
         const { data: courseUnit } = await supabase
           .from('course_units')
           .select('language_id')
-          .eq('id', report.course_unit_id)
+          .eq('id', mappedCourseUnitId)
           .single();
+
+        if (!courseUnit) {
+          results.reports.failed++;
+          results.reports.errors.push(`报告 ${report.id}: 课程单元 ${mappedCourseUnitId} 不存在`);
+          continue;
+        }
 
         const { error } = await supabase
           .from('study_reports')
@@ -130,8 +151,8 @@ export async function POST(request: NextRequest) {
             id: report.id,
             user_id: userId,
             student_id: report.student_id,
-            course_unit_id: report.course_unit_id,
-            language_id: courseUnit?.language_id,
+            course_unit_id: mappedCourseUnitId,
+            language_id: courseUnit.language_id,
             radar_dimensions: report.radar_dimensions,
             core_strengths: report.core_strengths,
             areas_to_improve: report.areas_to_improve,
@@ -143,7 +164,7 @@ export async function POST(request: NextRequest) {
             improvement_plan_3: report.improvement_plan_3,
             competition_plans: report.competition_plans,
             is_completed: true,
-            generated_at: report.generated_at || new Date().toISOString(),
+            generated_at: report.created_at || new Date().toISOString(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           });
