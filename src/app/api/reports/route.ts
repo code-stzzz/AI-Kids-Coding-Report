@@ -110,12 +110,24 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdminClient();
     const body = await request.json();
 
-    // 直接使用 REST API 插入，不包含 language_id（生产环境表无此字段）
+    // 从课程单元获取 language_id
+    const { data: courseUnit } = await supabase
+      .from('course_units')
+      .select('language_id')
+      .eq('id', body.course_unit_id)
+      .single();
+
+    if (!courseUnit?.language_id) {
+      return NextResponse.json({ error: '课程单元不存在' }, { status: 400 });
+    }
+
+    // 插入学习报告
     const { data, error } = await supabase
       .from('study_reports')
       .insert({
         student_id: body.student_id,
         course_unit_id: body.course_unit_id,
+        language_id: courseUnit.language_id,
         radar_dimensions: body.radar_dimensions,
         core_strengths: body.core_strengths,
         areas_to_improve: body.areas_to_improve,
