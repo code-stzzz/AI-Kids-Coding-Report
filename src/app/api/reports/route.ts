@@ -110,63 +110,30 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdminClient();
     const body = await request.json();
 
-    // 从课程单元获取 language_id
-    const { data: courseUnit } = await supabase
-      .from('course_units')
-      .select('language_id')
-      .eq('id', body.course_unit_id)
+    // 直接使用 REST API 插入，不包含 language_id（生产环境表无此字段）
+    const { data, error } = await supabase
+      .from('study_reports')
+      .insert({
+        student_id: body.student_id,
+        course_unit_id: body.course_unit_id,
+        radar_dimensions: body.radar_dimensions,
+        core_strengths: body.core_strengths,
+        areas_to_improve: body.areas_to_improve,
+        progress_description: body.progress_description,
+        improvement_description: body.improvement_description,
+        encouragement_message: body.encouragement_message,
+        improvement_plan_1: body.improvement_plan_1,
+        improvement_plan_2: body.improvement_plan_2,
+        improvement_plan_3: body.improvement_plan_3,
+        competition_plans: body.competition_plans,
+        user_id: userId,
+      })
+      .select()
       .single();
 
-    const languageId = courseUnit?.language_id || body.language_id;
-
-    // 使用 RPC 方式插入，绕过 Schema Cache 问题
-    const { data, error } = await supabase.rpc('insert_study_report', {
-      p_student_id: body.student_id,
-      p_course_unit_id: body.course_unit_id,
-      p_language_id: languageId,
-      p_user_id: userId,
-      p_radar_dimensions: body.radar_dimensions,
-      p_core_strengths: body.core_strengths,
-      p_areas_to_improve: body.areas_to_improve,
-      p_progress_description: body.progress_description,
-      p_improvement_description: body.improvement_description,
-      p_encouragement_message: body.encouragement_message,
-      p_improvement_plan_1: body.improvement_plan_1,
-      p_improvement_plan_2: body.improvement_plan_2,
-      p_improvement_plan_3: body.improvement_plan_3,
-      p_competition_plans: body.competition_plans,
-    });
-
     if (error) {
-      // 如果 RPC 不存在，回退到直接插入（但可能因 Schema Cache 失败）
-      console.error('[Reports] RPC 插入失败，尝试直接插入:', error.message);
-      
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('study_reports')
-        .insert({
-          student_id: body.student_id,
-          course_unit_id: body.course_unit_id,
-          language_id: languageId,
-          radar_dimensions: body.radar_dimensions,
-          core_strengths: body.core_strengths,
-          areas_to_improve: body.areas_to_improve,
-          progress_description: body.progress_description,
-          improvement_description: body.improvement_description,
-          encouragement_message: body.encouragement_message,
-          improvement_plan_1: body.improvement_plan_1,
-          improvement_plan_2: body.improvement_plan_2,
-          improvement_plan_3: body.improvement_plan_3,
-          competition_plans: body.competition_plans,
-          user_id: userId,
-        })
-        .select()
-        .single();
-
-      if (fallbackError) {
-        throw new Error(`创建学习报告失败: ${fallbackError.message}`);
-      }
-
-      return NextResponse.json({ data: fallbackData });
+      console.error('[Reports] 创建学习报告失败:', error.message);
+      throw new Error(`创建学习报告失败: ${error.message}`);
     }
 
     return NextResponse.json({ data });
