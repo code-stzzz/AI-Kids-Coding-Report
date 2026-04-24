@@ -8,6 +8,7 @@ import {
   Edit2, 
   Trash2, 
   BookOpen,
+  Sparkles,
   ChevronRight,
   Loader2,
   X,
@@ -396,14 +397,42 @@ export default function CoursesPage() {
             <div className="text-center py-8">
               <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">暂无课程版本</h3>
-              <p className="text-gray-500 mb-4">点击上方"新建版本"创建第一个课程版本</p>
-              <button
-                onClick={openAddVersion}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                新建版本
-              </button>
+              <p className="text-gray-500 mb-4">快速初始化或自定义创建课程版本</p>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={async () => {
+                    if (!confirm(`确定要初始化 ${languages.find(l => l.id === selectedLanguage)?.name} 4.0 版本的课程模板吗？`)) return;
+                    try {
+                      const response = await fetch('/api/init-courses', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ languageId: selectedLanguage, versionName: '4.0' })
+                      });
+                      const result = await response.json();
+                      if (result.success) {
+                        alert(`初始化成功！已创建 ${result.courseCount} 个课程单元`);
+                        await loadData();
+                      } else {
+                        alert('初始化失败: ' + result.error);
+                      }
+                    } catch (error) {
+                      console.error('初始化失败:', error);
+                      alert('初始化失败，请重试');
+                    }
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors inline-flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  一键初始化 4.0 版本
+                </button>
+                <button
+                  onClick={openAddVersion}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  自定义版本
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
