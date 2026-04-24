@@ -26,12 +26,23 @@ async function getAccessToken(): Promise<string | null> {
     }
     
     // 备用：从 localStorage 获取（Supabase 默认存储格式）
-    // 尝试多种可能的 key 格式（支持新旧项目 ID）
-    const possibleKeys = [
-      'sb-dkxidckofamqwwocvpvw-auth-token',  // 新项目 ID（一个 o）
-      'sb-dkxidckofamqwwoocvpvw-auth-token', // 旧项目 ID（两个 o）
-      'supabase.auth.token',
-    ];
+    // 动态检测所有可能的 Supabase auth token keys
+    const possibleKeys: string[] = [];
+    
+    // 从 localStorage 中查找所有 sb-*-auth-token 格式的 key
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('sb-') && key.endsWith('-auth-token'))) {
+        possibleKeys.push(key);
+      }
+    }
+    
+    // 添加通用的 key
+    possibleKeys.push('supabase.auth.token');
+    
+    // 添加已知的开发/生产环境 keys（兜底）
+    possibleKeys.push('sb-dkxidckofamqwwocvpvw-auth-token');
+    possibleKeys.push('sb-dkxidckofamqwwoocvpvw-auth-token');
     
     for (const key of possibleKeys) {
       const sessionStr = localStorage.getItem(key);
@@ -124,6 +135,20 @@ export async function createVersion(data: {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error);
+  return json.data;
+}
+
+export async function initDefaultVersion(languageId: string, versionName: string = '4.0'): Promise<{
+  version: CurriculumVersion;
+  courseUnitsCount: number;
+}> {
+  const res = await authFetch('/api/init-courses', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ languageId, versionName }),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error);

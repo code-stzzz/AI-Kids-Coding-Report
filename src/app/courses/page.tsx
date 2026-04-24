@@ -26,6 +26,7 @@ import {
   createCourseUnit,
   updateCourseUnit,
   deleteCourseUnit,
+  initDefaultVersion,
   ProgrammingLanguage,
   CurriculumVersion,
   CourseUnit
@@ -403,21 +404,12 @@ export default function CoursesPage() {
                   onClick={async () => {
                     if (!confirm(`确定要初始化 ${languages.find(l => l.id === selectedLanguage)?.name} 4.0 版本的课程模板吗？`)) return;
                     try {
-                      const response = await fetch('/api/init-courses', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ languageId: selectedLanguage, versionName: '4.0' })
-                      });
-                      const result = await response.json();
-                      if (result.success) {
-                        alert(`初始化成功！已创建 ${result.courseCount} 个课程单元`);
-                        await loadData();
-                      } else {
-                        alert('初始化失败: ' + result.error);
-                      }
+                      const result = await initDefaultVersion(selectedLanguage, '4.0');
+                      alert(`初始化成功！已创建 ${result.courseUnitsCount} 个课程单元`);
+                      await loadData();
                     } catch (error) {
                       console.error('初始化失败:', error);
-                      alert('初始化失败，请重试');
+                      alert('初始化失败: ' + (error instanceof Error ? error.message : '请重试'));
                     }
                   }}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors inline-flex items-center gap-2"
