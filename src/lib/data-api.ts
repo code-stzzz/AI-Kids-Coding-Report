@@ -91,11 +91,73 @@ export async function getLanguages(): Promise<ProgrammingLanguage[]> {
   return json.data || [];
 }
 
+// ==================== 课程版本 ====================
+
+export interface CurriculumVersion {
+  id: string;
+  language_id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  is_default: boolean;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getVersions(languageId?: string): Promise<CurriculumVersion[]> {
+  const url = languageId 
+    ? `/api/versions?language_id=${languageId}` 
+    : '/api/versions';
+  const res = await authFetch(url);
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function createVersion(data: {
+  language_id: string;
+  name: string;
+  description?: string;
+  is_default?: boolean;
+}): Promise<CurriculumVersion> {
+  const res = await authFetch('/api/versions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error);
+  return json.data;
+}
+
+export async function updateVersion(data: {
+  id: string;
+  name?: string;
+  description?: string;
+  is_default?: boolean;
+}): Promise<CurriculumVersion> {
+  const res = await authFetch('/api/versions', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error);
+  return json.data;
+}
+
+export async function deleteVersion(id: string): Promise<void> {
+  const res = await authFetch(`/api/versions?id=${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error);
+}
+
 // ==================== 课程单元 ====================
 
 export interface CourseUnit {
   id: string;
   language_id: string;
+  version_id: string | null;
   name: string;
   period_number: number;
   current_stage_content: string;
@@ -104,13 +166,64 @@ export interface CourseUnit {
   is_active: boolean;
 }
 
-export async function getCourseUnits(languageId?: string): Promise<CourseUnit[]> {
-  const url = languageId 
-    ? `/api/courses?language_id=${languageId}` 
-    : '/api/courses';
+export async function getCourseUnits(params?: { languageId?: string; versionId?: string }): Promise<CourseUnit[]> {
+  let url = '/api/courses';
+  const searchParams: string[] = [];
+  
+  if (params?.versionId) {
+    searchParams.push(`version_id=${params.versionId}`);
+  } else if (params?.languageId) {
+    searchParams.push(`language_id=${params.languageId}`);
+  }
+  
+  if (searchParams.length > 0) {
+    url += '?' + searchParams.join('&');
+  }
+  
   const res = await authFetch(url);
   const json = await res.json();
   return json.data || [];
+}
+
+export async function createCourseUnit(data: {
+  language_id: string;
+  version_id?: string;
+  name: string;
+  period_number: number;
+  current_stage_content?: string;
+  description?: string;
+}): Promise<CourseUnit> {
+  const res = await authFetch('/api/courses', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error);
+  return json.data;
+}
+
+export async function updateCourseUnit(data: {
+  id: string;
+  name?: string;
+  period_number?: number;
+  current_stage_content?: string;
+  description?: string;
+}): Promise<CourseUnit> {
+  const res = await authFetch('/api/courses', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error);
+  return json.data;
+}
+
+export async function deleteCourseUnit(id: string): Promise<void> {
+  const res = await authFetch(`/api/courses?id=${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error);
 }
 
 // ==================== 班级 ====================

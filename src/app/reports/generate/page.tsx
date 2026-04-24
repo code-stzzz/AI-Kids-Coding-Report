@@ -112,7 +112,7 @@ export default function GenerateReportsPage() {
       const [studentData, reportData, allCourses] = await Promise.all([
         getStudents(selectedClass),
         getReports(),
-        getCourseUnits(cls.language_id)
+        getCourseUnits({ languageId: cls.language_id })
       ]);
 
       // 保存所有报告数据

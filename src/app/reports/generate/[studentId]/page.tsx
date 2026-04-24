@@ -151,13 +151,13 @@ function StudentReportContent() {
       setLanguage(langData);
       
       // 加载本语言的课程单元
-      const courseData = await getCourseUnits(classData.language_id);
+      const courseData = await getCourseUnits({ languageId: classData.language_id });
       setCourseUnits(courseData);
       
       // 加载所有语言的课程单元（用于下阶段选择）
       const allUnits: CourseUnit[] = [];
       for (const lang of languages) {
-        const units = await getCourseUnits(lang.id);
+        const units = await getCourseUnits({ languageId: lang.id });
         allUnits.push(...units);
       }
       setAllCourseUnits(allUnits);

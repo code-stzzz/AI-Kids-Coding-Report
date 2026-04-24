@@ -114,7 +114,7 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
       // Load related data using language_id from class
       const [studentLanguageData, studentCourseData, existingReports] = await Promise.all([
         getLanguages(),
-        getCourseUnits(classData.language_id),
+        getCourseUnits({ languageId: classData.language_id }),
         getReports({ studentId })
       ]);
       
