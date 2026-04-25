@@ -120,10 +120,43 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingVersions && existingVersions.length > 0) {
+      // 版本已存在，检查是否有未关联版本的课程单元需要迁移
+      const existingVersion = existingVersions[0];
+      const { data: unlinkedUnits, error: checkUnitsError } = await supabase
+        .from('course_units')
+        .select('id')
+        .eq('language_id', languageId)
+        .is('version_id', null);
+
+      if (checkUnitsError) {
+        console.error('[Init Courses] 查询未关联课程失败:', checkUnitsError);
+      }
+
+      if (unlinkedUnits && unlinkedUnits.length > 0) {
+        // 有未关联的课程，执行迁移
+        const { error: updateError } = await supabase
+          .from('course_units')
+          .update({ version_id: existingVersion.id })
+          .eq('language_id', languageId)
+          .is('version_id', null);
+
+        if (updateError) {
+          console.error('[Init Courses] 迁移课程数据失败:', updateError);
+          return NextResponse.json({ error: '迁移课程数据失败' }, { status: 500 });
+        }
+
+        return NextResponse.json({
+          success: true,
+          migratedCount: unlinkedUnits.length,
+          message: `已将 ${unlinkedUnits.length} 条课程数据关联到版本 4.0`
+        });
+      }
+
       return NextResponse.json({
-        error: '已存在课程版本，请刷新页面查看',
+        success: true,
+        message: '该语言的课程版本已存在且数据完整',
         existing: true
-      }, { status: 400 });
+      });
     }
 
     // 创建默认版本 4.0
@@ -144,29 +177,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '创建版本失败' }, { status: 500 });
     }
 
-    // 创建课程单元
-    const units = template.units.map((unit, index) => ({
-      version_id: version.id,
-      language_id: languageId,
-      name: unit.name,
-      period_number: index + 1,
-      current_stage_content: unit.description,
-      description: unit.description,
-    }));
-
-    const { error: unitsError } = await supabase
+    // 检查是否存在旧的课程单元数据（version_id 为 null）
+    const { data: existingUnits, error: checkUnitsError } = await supabase
       .from('course_units')
-      .insert(units);
+      .select('id')
+      .eq('language_id', languageId)
+      .is('version_id', null);
 
-    if (unitsError) {
-      console.error('[Init Courses] 创建课程单元失败:', unitsError);
-      
-      // 检查是否是 RLS 策略问题
-      if (unitsError.code === '42501' || unitsError.message.includes('row-level security')) {
-        return NextResponse.json({ 
-          error: 'course_units 表的 RLS 策略需要修复，请在 Supabase SQL Editor 中执行以下 SQL：',
-          errorType: 'RLS_POLICY_ERROR',
-          rlsFixSql: `-- 修复 course_units 表的 RLS 策略
+    if (checkUnitsError) {
+      console.error('[Init Courses] 查询现有课程单元失败:', checkUnitsError);
+      // 继续执行，不影响主流程
+    }
+
+    let migratedCount = 0;
+    let createdCount = 0;
+
+    // 如果存在旧数据，将它们关联到新版本
+    if (existingUnits && existingUnits.length > 0) {
+      const { error: updateError, count } = await supabase
+        .from('course_units')
+        .update({ version_id: version.id })
+        .eq('language_id', languageId)
+        .is('version_id', null);
+
+      if (updateError) {
+        console.error('[Init Courses] 迁移旧课程数据失败:', updateError);
+        // 继续执行，尝试创建新课程
+      } else {
+        migratedCount = existingUnits.length;
+        console.log(`[Init Courses] 已将 ${migratedCount} 条课程单元关联到版本 ${version.name}`);
+      }
+    } else {
+      // 没有旧数据，创建新的课程单元
+      const units = template.units.map((unit, index) => ({
+        version_id: version.id,
+        language_id: languageId,
+        name: unit.name,
+        period_number: index + 1,
+        current_stage_content: unit.description,
+        description: unit.description,
+      }));
+
+      const { error: unitsError } = await supabase
+        .from('course_units')
+        .insert(units);
+
+      if (unitsError) {
+        console.error('[Init Courses] 创建课程单元失败:', unitsError);
+        
+        // 检查是否是 RLS 策略问题
+        if (unitsError.code === '42501' || unitsError.message.includes('row-level security')) {
+          return NextResponse.json({ 
+            error: 'course_units 表的 RLS 策略需要修复，请在 Supabase SQL Editor 中执行以下 SQL：',
+            errorType: 'RLS_POLICY_ERROR',
+            rlsFixSql: `-- 修复 course_units 表的 RLS 策略
 DROP POLICY IF EXISTS "course_units_允许公开读取" ON course_units;
 DROP POLICY IF EXISTS "course_units_允许公开写入" ON course_units;
 DROP POLICY IF EXISTS "course_units_允许公开更新" ON course_units;
@@ -177,16 +241,23 @@ CREATE POLICY "course_units_允许公开写入" ON course_units FOR INSERT WITH 
 CREATE POLICY "course_units_允许公开更新" ON course_units FOR UPDATE USING (true) WITH CHECK (true);
 CREATE POLICY "course_units_允许公开删除" ON course_units FOR DELETE USING (true);
 ALTER TABLE course_units ENABLE ROW LEVEL SECURITY;`
-        }, { status: 500 });
+          }, { status: 500 });
+        }
+        
+        return NextResponse.json({ error: '创建课程单元失败' }, { status: 500 });
       }
-      
-      return NextResponse.json({ error: '创建课程单元失败' }, { status: 500 });
+
+      createdCount = units.length;
     }
 
     return NextResponse.json({
       success: true,
       version: version,
-      unitsCount: units.length
+      migratedCount,
+      createdCount,
+      message: migratedCount > 0 
+        ? `已将 ${migratedCount} 条课程数据关联到版本 4.0` 
+        : `已创建 ${createdCount} 条课程单元`
     });
   } catch (error) {
     console.error('[Init Courses] 初始化失败:', error);
