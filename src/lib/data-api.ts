@@ -183,7 +183,16 @@ export async function initDefaultVersion(languageId: string, versionName: string
     body: JSON.stringify({ languageId, versionName }),
   });
   const json = await res.json();
-  if (!res.ok) throw new Error(json.error);
+  if (!res.ok) {
+    // 如果是 RLS 错误，抛出包含修复 SQL 的错误对象
+    if (json.errorType === 'RLS_POLICY_ERROR' && json.rlsFixSql) {
+      const err = new Error(json.error);
+      (err as any).errorType = 'RLS_POLICY_ERROR';
+      (err as any).rlsFixSql = json.rlsFixSql;
+      throw err;
+    }
+    throw new Error(json.error);
+  }
   return json.data;
 }
 

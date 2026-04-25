@@ -160,6 +160,26 @@ export async function POST(request: NextRequest) {
 
     if (unitsError) {
       console.error('[Init Courses] 创建课程单元失败:', unitsError);
+      
+      // 检查是否是 RLS 策略问题
+      if (unitsError.code === '42501' || unitsError.message.includes('row-level security')) {
+        return NextResponse.json({ 
+          error: 'course_units 表的 RLS 策略需要修复，请在 Supabase SQL Editor 中执行以下 SQL：',
+          errorType: 'RLS_POLICY_ERROR',
+          rlsFixSql: `-- 修复 course_units 表的 RLS 策略
+DROP POLICY IF EXISTS "course_units_允许公开读取" ON course_units;
+DROP POLICY IF EXISTS "course_units_允许公开写入" ON course_units;
+DROP POLICY IF EXISTS "course_units_允许公开更新" ON course_units;
+DROP POLICY IF EXISTS "course_units_允许公开删除" ON course_units;
+
+CREATE POLICY "course_units_允许公开读取" ON course_units FOR SELECT USING (true);
+CREATE POLICY "course_units_允许公开写入" ON course_units FOR INSERT WITH CHECK (true);
+CREATE POLICY "course_units_允许公开更新" ON course_units FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "course_units_允许公开删除" ON course_units FOR DELETE USING (true);
+ALTER TABLE course_units ENABLE ROW LEVEL SECURITY;`
+        }, { status: 500 });
+      }
+      
       return NextResponse.json({ error: '创建课程单元失败' }, { status: 500 });
     }
 

@@ -48,7 +48,30 @@ CREATE POLICY "Users can delete own versions" ON curriculum_versions
 -- 6. 添加 AI 编程语言
 INSERT INTO programming_languages (id, name, display_name, icon, color, description)
 VALUES ('lang-ai', 'AI', '人工智能', '🤖', '#8B5CF6', 'AI编程与机器学习')
-ON CONFLICT (id) DO NOTHING;`;
+ON CONFLICT (id) DO NOTHING;
+
+-- 7. 确保 course_units 表有正确的 RLS 策略（允许公开读写课程单元）
+-- 先删除可能存在的旧策略（避免冲突）
+DROP POLICY IF EXISTS "course_units_允许公开读取" ON course_units;
+DROP POLICY IF EXISTS "course_units_允许公开写入" ON course_units;
+DROP POLICY IF EXISTS "course_units_允许公开更新" ON course_units;
+DROP POLICY IF EXISTS "course_units_允许公开删除" ON course_units;
+
+-- 重新创建策略
+CREATE POLICY "course_units_允许公开读取" ON course_units
+  FOR SELECT USING (true);
+
+CREATE POLICY "course_units_允许公开写入" ON course_units
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "course_units_允许公开更新" ON course_units
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE POLICY "course_units_允许公开删除" ON course_units
+  FOR DELETE USING (true);
+
+-- 8. 确保 RLS 已启用
+ALTER TABLE course_units ENABLE ROW LEVEL SECURITY;`;
 
 // GET: 检查迁移状态
 export async function GET(request: NextRequest) {

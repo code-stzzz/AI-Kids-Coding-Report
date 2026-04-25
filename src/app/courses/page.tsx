@@ -537,15 +537,21 @@ export default function CoursesPage() {
                       const result = await initDefaultVersion(selectedLanguage, '4.0');
                       alert(`初始化成功！已创建 ${result.courseUnitsCount} 个课程单元`);
                       await loadData();
-                    } catch (error) {
+                    } catch (error: any) {
                       console.error('初始化失败:', error);
                       const msg = error instanceof Error ? error.message : '请重试';
                       if (msg.includes('迁移') || msg.includes('migration')) {
                         setNeedMigration(true);
                         const status = await checkMigration();
                         setMigrationSQL(status.sql || '');
+                      } else if (error.errorType === 'RLS_POLICY_ERROR' && error.rlsFixSql) {
+                        // RLS 策略错误，显示修复引导
+                        setNeedMigration(true);
+                        setMigrationSQL(error.rlsFixSql);
+                        alert('初始化失败: 数据库权限策略需要修复，请按页面提示操作');
+                      } else {
+                        alert('初始化失败: ' + msg);
                       }
-                      alert('初始化失败: ' + msg);
                     }
                   }}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors inline-flex items-center gap-2"
