@@ -86,6 +86,38 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
   });
 }
 
+// ==================== 数据库迁移 ====================
+
+export interface MigrationStatus {
+  needsMigration: boolean;
+  checks: {
+    versionsTable: boolean;
+    versionIdColumn: boolean;
+    aiLanguage: boolean;
+  };
+  sql?: string;
+}
+
+export async function checkMigration(): Promise<MigrationStatus> {
+  try {
+    const res = await authFetch('/api/migrate');
+    const json = await res.json();
+    return json;
+  } catch {
+    return { needsMigration: true, checks: { versionsTable: false, versionIdColumn: false, aiLanguage: false } };
+  }
+}
+
+export async function verifyMigration(): Promise<{ success: boolean; message: string }> {
+  try {
+    const res = await authFetch('/api/migrate', { method: 'POST' });
+    const json = await res.json();
+    return json;
+  } catch {
+    return { success: false, message: '验证失败，请重试' };
+  }
+}
+
 // ==================== 编程语言 ====================
 
 export interface ProgrammingLanguage {

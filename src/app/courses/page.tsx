@@ -14,7 +14,12 @@ import {
   X,
   Star,
   StarOff,
-  Copy
+  Copy,
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Clipboard,
+  RefreshCw
 } from 'lucide-react';
 import { 
   getLanguages, 
@@ -27,6 +32,8 @@ import {
   updateCourseUnit,
   deleteCourseUnit,
   initDefaultVersion,
+  checkMigration,
+  verifyMigration,
   ProgrammingLanguage,
   CurriculumVersion,
   CourseUnit
@@ -39,6 +46,12 @@ export default function CoursesPage() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  
+  // 迁移状态
+  const [needMigration, setNeedMigration] = useState(false);
+  const [migrationSQL, setMigrationSQL] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   
   // 版本弹窗状态
   const [showVersionModal, setShowVersionModal] = useState(false);
@@ -64,6 +77,17 @@ export default function CoursesPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // 检查数据库迁移状态
+      const migrationStatus = await checkMigration();
+      if (migrationStatus.needsMigration) {
+        setNeedMigration(true);
+        setMigrationSQL(migrationStatus.sql || '');
+        setLoading(false);
+        return;
+      }
+      setNeedMigration(false);
+      
       const langData = await getLanguages();
       setLanguages(langData);
       
@@ -363,7 +387,113 @@ export default function CoursesPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 迁移引导 */}
+        {needMigration && (
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <AlertTriangle className="w-8 h-8 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-bold text-amber-900 mb-1">数据库需要升级</h2>
+                <p className="text-amber-700 mb-4">
+                  课程版本管理功能需要新增数据库表，请按以下步骤完成升级：
+                </p>
+                
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-sm font-bold">1</span>
+                    <div>
+                      <p className="text-amber-900 font-medium">复制下方 SQL 语句</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-sm font-bold">2</span>
+                    <div>
+                      <p className="text-amber-900 font-medium">打开 Supabase SQL Editor</p>
+                      <a
+                        href="https://supabase.com/dashboard/project/dkxidckofamqwwocvpvw/sql/new"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm underline"
+                      >
+                        点击打开 SQL Editor <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-sm font-bold">3</span>
+                    <div>
+                      <p className="text-amber-900 font-medium">粘贴 SQL 并点击 Run 执行</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-sm font-bold">4</span>
+                    <div>
+                      <p className="text-amber-900 font-medium">回到本页面点击&quot;验证迁移&quot;按钮</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SQL 代码区域 */}
+                <div className="relative bg-gray-900 rounded-xl overflow-hidden mb-4">
+                  <div className="flex items-center justify-between px-4 py-2 bg-gray-800">
+                    <span className="text-gray-400 text-xs font-mono">SQL</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(migrationSQL);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded text-xs transition-colors"
+                    >
+                      {copied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
+                      {copied ? '已复制' : '复制 SQL'}
+                    </button>
+                  </div>
+                  <pre className="p-4 text-sm text-green-400 font-mono overflow-x-auto max-h-64 overflow-y-auto whitespace-pre">
+                    {migrationSQL}
+                  </pre>
+                </div>
+
+                {/* 验证按钮 */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      setVerifying(true);
+                      try {
+                        const result = await verifyMigration();
+                        if (result.success) {
+                          alert('数据库升级成功！页面将刷新...');
+                          setNeedMigration(false);
+                          await loadData();
+                        } else {
+                          alert(result.message);
+                        }
+                      } catch {
+                        alert('验证失败，请重试');
+                      } finally {
+                        setVerifying(false);
+                      }
+                    }}
+                    disabled={verifying}
+                    className="px-5 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 flex items-center gap-2 font-medium"
+                  >
+                    {verifying ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                    验证迁移
+                  </button>
+                  <span className="text-amber-600 text-sm">执行 SQL 后点击此按钮验证</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Language Tabs */}
+        {!needMigration && (
+        <div>
         <div className="bg-white rounded-2xl shadow-sm border mb-6 overflow-hidden">
           <div className="flex overflow-x-auto">
             {languages.map((lang) => (
@@ -409,7 +539,13 @@ export default function CoursesPage() {
                       await loadData();
                     } catch (error) {
                       console.error('初始化失败:', error);
-                      alert('初始化失败: ' + (error instanceof Error ? error.message : '请重试'));
+                      const msg = error instanceof Error ? error.message : '请重试';
+                      if (msg.includes('迁移') || msg.includes('migration')) {
+                        setNeedMigration(true);
+                        const status = await checkMigration();
+                        setMigrationSQL(status.sql || '');
+                      }
+                      alert('初始化失败: ' + msg);
                     }
                   }}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors inline-flex items-center gap-2"
@@ -589,6 +725,8 @@ export default function CoursesPage() {
               )})
             )}
           </div>
+        )}
+        </div>
         )}
       </main>
 

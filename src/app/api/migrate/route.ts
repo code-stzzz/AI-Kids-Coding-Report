@@ -1,45 +1,17 @@
-import { NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { NextRequest, NextResponse } from 'next/server';
+import { getSupabaseClientAsync } from '@/storage/database/supabase-client';
+import { extractToken } from '@/lib/auth';
 
-export async function POST() {
-  try {
-    const supabase = getSupabaseClient();
-    const results: string[] = [];
+// 完整的迁移 SQL
+const MIGRATION_SQL = `-- ============================================
+-- 课程版本管理迁移脚本
+-- 执行位置：Supabase Dashboard → SQL Editor
+-- ============================================
 
-    // 检查 curriculum_versions 表是否存在
-    const { error: checkError } = await supabase
-      .from('curriculum_versions')
-      .select('id')
-      .limit(1);
-
-    if (checkError) {
-      results.push('curriculum_versions 表不存在，需要在 Supabase Dashboard 手动创建');
-    } else {
-      results.push('curriculum_versions 表已存在');
-    }
-
-    // 添加 AI 编程语言
-    const { error: aiError } = await supabase
-      .from('programming_languages')
-      .upsert({
-        id: 'lang-ai',
-        name: 'AI',
-        description: '人工智能编程，学习机器学习和深度学习基础',
-        icon: '🤖'
-      });
-
-    if (aiError) {
-      results.push(`添加 AI 编程语言: ${aiError.message}`);
-    } else {
-      results.push('添加 AI 编程语言: 成功');
-    }
-
-    // 返回需要手动执行的 SQL
-    const migrationSQL = `
 -- 1. 创建课程版本表
 CREATE TABLE IF NOT EXISTS curriculum_versions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  language_id UUID NOT NULL REFERENCES programming_languages(id) ON DELETE CASCADE,
+  language_id VARCHAR NOT NULL REFERENCES programming_languages(id) ON DELETE CASCADE,
   name VARCHAR(100) NOT NULL,
   description TEXT,
   is_active BOOLEAN DEFAULT true,
@@ -57,24 +29,146 @@ CREATE INDEX IF NOT EXISTS idx_curriculum_versions_language_id ON curriculum_ver
 CREATE INDEX IF NOT EXISTS idx_curriculum_versions_user_id ON curriculum_versions(user_id);
 CREATE INDEX IF NOT EXISTS idx_course_units_version_id ON course_units(version_id);
 
--- 4. 为每个语言创建默认版本 4.0（可选，需要替换 user_id）
--- INSERT INTO curriculum_versions (language_id, name, description, is_default, user_id)
--- SELECT id, '4.0', '默认课程版本', true, '你的用户ID' FROM programming_languages;
-`;
+-- 4. 启用 RLS
+ALTER TABLE curriculum_versions ENABLE ROW LEVEL SECURITY;
+
+-- 5. 创建 RLS 策略（用户只能操作自己的版本）
+CREATE POLICY "Users can view own versions" ON curriculum_versions
+  FOR SELECT USING (auth.uid()::uuid = user_id);
+
+CREATE POLICY "Users can insert own versions" ON curriculum_versions
+  FOR INSERT WITH CHECK (auth.uid()::uuid = user_id);
+
+CREATE POLICY "Users can update own versions" ON curriculum_versions
+  FOR UPDATE USING (auth.uid()::uuid = user_id);
+
+CREATE POLICY "Users can delete own versions" ON curriculum_versions
+  FOR DELETE USING (auth.uid()::uuid = user_id);
+
+-- 6. 添加 AI 编程语言
+INSERT INTO programming_languages (id, name, display_name, icon, color, description)
+VALUES ('lang-ai', 'AI', '人工智能', '🤖', '#8B5CF6', 'AI编程与机器学习')
+ON CONFLICT (id) DO NOTHING;`;
+
+// GET: 检查迁移状态
+export async function GET(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const token = extractToken(authHeader);
+
+    if (!token) {
+      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    }
+
+    const supabase = await getSupabaseClientAsync(token);
+
+    // 检查 curriculum_versions 表是否存在
+    const { error: versionTableError } = await supabase
+      .from('curriculum_versions')
+      .select('id')
+      .limit(1);
+
+    const hasVersionsTable = !versionTableError ||
+      !versionTableError.message.includes('Could not find') &&
+      !versionTableError.message.includes('does not exist');
+
+    // 检查 course_units 是否有 version_id 列
+    let hasVersionIdColumn = false;
+    if (hasVersionsTable) {
+      const { error: columnError } = await supabase
+        .from('course_units')
+        .select('id,version_id')
+        .limit(1);
+      hasVersionIdColumn = !columnError;
+    }
+
+    // 检查 AI 编程语言是否存在
+    const { data: aiLang } = await supabase
+      .from('programming_languages')
+      .select('id')
+      .eq('id', 'lang-ai')
+      .maybeSingle();
+
+    const needsMigration = !hasVersionsTable || !hasVersionIdColumn;
 
     return NextResponse.json({
-      success: !checkError,
-      results,
-      needMigration: !!checkError,
-      sql: migrationSQL,
-      note: '如果 curriculum_versions 表不存在，请在 Supabase SQL Editor 中执行上述 SQL'
+      needsMigration,
+      checks: {
+        versionsTable: hasVersionsTable,
+        versionIdColumn: hasVersionIdColumn,
+        aiLanguage: !!aiLang,
+      },
+      sql: MIGRATION_SQL,
     });
-
   } catch (error) {
     console.error('迁移检查失败:', error);
     return NextResponse.json({
+      needsMigration: true,
+      checks: { versionsTable: false, versionIdColumn: false, aiLanguage: false },
+      sql: MIGRATION_SQL,
+    });
+  }
+}
+
+// POST: 验证迁移是否已完成
+export async function POST(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const token = extractToken(authHeader);
+
+    if (!token) {
+      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    }
+
+    const supabase = await getSupabaseClientAsync(token);
+
+    // 检查 curriculum_versions 表是否存在
+    const { error: versionTableError } = await supabase
+      .from('curriculum_versions')
+      .select('id')
+      .limit(1);
+
+    if (versionTableError) {
+      return NextResponse.json({
+        success: false,
+        message: 'curriculum_versions 表仍未创建，请确认已在 Supabase SQL Editor 中执行了迁移 SQL',
+      });
+    }
+
+    // 检查 course_units 是否有 version_id 列
+    const { error: columnError } = await supabase
+      .from('course_units')
+      .select('id,version_id')
+      .limit(1);
+
+    if (columnError) {
+      return NextResponse.json({
+        success: false,
+        message: 'course_units.version_id 列仍未添加，请确认迁移 SQL 完整执行',
+      });
+    }
+
+    // 检查 AI 语言
+    const { data: aiLang } = await supabase
+      .from('programming_languages')
+      .select('id')
+      .eq('id', 'lang-ai')
+      .maybeSingle();
+
+    return NextResponse.json({
+      success: true,
+      message: '数据库迁移成功！',
+      checks: {
+        versionsTable: true,
+        versionIdColumn: true,
+        aiLanguage: !!aiLang,
+      },
+    });
+  } catch (error) {
+    console.error('迁移验证失败:', error);
+    return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : '迁移检查失败'
-    }, { status: 500 });
+      message: '验证失败，请重试',
+    });
   }
 }

@@ -100,16 +100,29 @@ export async function POST(request: NextRequest) {
     const supabase = await getSupabaseClientAsync(token);
 
     // 检查是否已有版本
-    const { data: existingVersions } = await supabase
+    const { data: existingVersions, error: checkError } = await supabase
       .from('curriculum_versions')
       .select('id')
       .eq('language_id', languageId)
       .eq('user_id', userId);
 
+    // 表不存在时返回迁移提示
+    if (checkError && (checkError.message.includes('Could not find') || checkError.message.includes('does not exist'))) {
+      return NextResponse.json({
+        error: '数据库需要迁移，请先完成数据库升级',
+        needMigration: true,
+      }, { status: 400 });
+    }
+
+    if (checkError) {
+      console.error('[Init Courses] 查询版本失败:', checkError);
+      return NextResponse.json({ error: '查询版本失败' }, { status: 500 });
+    }
+
     if (existingVersions && existingVersions.length > 0) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: '已存在课程版本，请刷新页面查看',
-        existing: true 
+        existing: true
       }, { status: 400 });
     }
 
@@ -150,10 +163,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '创建课程单元失败' }, { status: 500 });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       version: version,
-      unitsCount: units.length 
+      unitsCount: units.length
     });
   } catch (error) {
     console.error('[Init Courses] 初始化失败:', error);

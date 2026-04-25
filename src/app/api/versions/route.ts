@@ -37,10 +37,14 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
+      // 表不存在时返回 needMigration 标记，而不是抛出 500 错误
+      if (error.message.includes('Could not find') || error.message.includes('does not exist')) {
+        return NextResponse.json({ data: [], needMigration: true });
+      }
       throw new Error(`获取课程版本失败: ${error.message}`);
     }
 
-    return NextResponse.json({ data, needMigration: false });
+    return NextResponse.json({ data: data || [], needMigration: false });
   } catch (error) {
     console.error('获取课程版本异常:', error);
     return NextResponse.json(
@@ -87,6 +91,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (versionError) {
+      // 表不存在
+      if (versionError.message.includes('Could not find') || versionError.message.includes('does not exist')) {
+        return NextResponse.json({ error: '数据库需要迁移', needMigration: true }, { status: 400 });
+      }
       throw new Error(`创建版本失败: ${versionError.message}`);
     }
 
