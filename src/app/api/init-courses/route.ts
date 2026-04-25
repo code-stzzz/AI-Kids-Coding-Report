@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { getUserIdFromRequest } from '@/lib/auth';
+import { getSupabaseClientAsync } from '@/storage/database/supabase-client';
+import { getUserIdFromRequest, extractToken } from '@/lib/auth';
 
 // 课程单元模板
 const COURSE_TEMPLATES = {
@@ -76,9 +76,11 @@ const COURSE_TEMPLATES = {
 
 export async function POST(request: NextRequest) {
   try {
-    // 获取用户 ID
+    // 获取 token 和用户 ID
+    const authHeader = request.headers.get('authorization');
+    const token = extractToken(authHeader);
     const userId = getUserIdFromRequest(request);
-    if (!userId) {
+    if (!userId || !token) {
       return NextResponse.json({ error: '未授权' }, { status: 401 });
     }
 
@@ -94,7 +96,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '不支持的编程语言' }, { status: 400 });
     }
 
-    const supabase = getSupabaseClient();
+    // 使用 token 创建 Supabase 客户端，确保 RLS 能识别用户
+    const supabase = await getSupabaseClientAsync(token);
 
     // 检查是否已有版本
     const { data: existingVersions } = await supabase

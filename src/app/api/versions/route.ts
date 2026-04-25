@@ -1,37 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { getUserIdFromToken } from '@/lib/auth';
+import { getSupabaseClientAsync } from '@/storage/database/supabase-client';
+import { getUserIdFromToken, extractToken } from '@/lib/auth';
 
 // 获取课程版本列表
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient();
     const { searchParams } = new URL(request.url);
     const languageId = searchParams.get('language_id');
 
-    // 获取用户 ID
+    // 获取用户 ID 和 token
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    const userId = await getUserIdFromToken(token);
+    const token = extractToken(authHeader);
+    const userId = getUserIdFromToken(token);
 
-    if (!userId) {
+    if (!userId || !token) {
       return NextResponse.json({ data: [] });
     }
 
-    // 检查表是否存在
-    const { error: tableCheckError } = await supabase
-      .from('curriculum_versions')
-      .select('id')
-      .limit(1);
-
-    if (tableCheckError) {
-      // 表不存在，返回空的版本列表，并提示需要创建表
-      return NextResponse.json({
-        data: [],
-        needMigration: true,
-        message: 'curriculum_versions 表不存在，请在 Supabase Dashboard 执行 SQL 创建表'
-      });
-    }
+    // 使用 token 创建 Supabase 客户端
+    const supabase = await getSupabaseClientAsync(token);
 
     // 查询用户自己的版本
     let query = supabase
@@ -66,18 +53,19 @@ export async function GET(request: NextRequest) {
 // 创建课程版本
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient();
-    const body = await request.json();
-
-    // 获取用户 ID
+    // 获取用户 ID 和 token
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    const userId = await getUserIdFromToken(token);
+    const token = extractToken(authHeader);
+    const userId = getUserIdFromToken(token);
 
-    if (!userId) {
+    if (!userId || !token) {
       return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
 
+    // 使用 token 创建 Supabase 客户端
+    const supabase = await getSupabaseClientAsync(token);
+
+    const body = await request.json();
     const { language_id, name, description, copy_from_version_id } = body;
 
     if (!language_id || !name) {
@@ -99,14 +87,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (versionError) {
-      // 检查是否是表不存在的错误
-      if (versionError.message.includes('does not exist') || versionError.message.includes('relation')) {
-        return NextResponse.json({
-          error: '数据库表未创建',
-          needMigration: true,
-          sql: getMigrationSQL()
-        }, { status: 500 });
-      }
       throw new Error(`创建版本失败: ${versionError.message}`);
     }
 
@@ -145,18 +125,19 @@ export async function POST(request: NextRequest) {
 // 更新课程版本
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient();
-    const body = await request.json();
-
-    // 获取用户 ID
+    // 获取用户 ID 和 token
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    const userId = await getUserIdFromToken(token);
+    const token = extractToken(authHeader);
+    const userId = getUserIdFromToken(token);
 
-    if (!userId) {
+    if (!userId || !token) {
       return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
 
+    // 使用 token 创建 Supabase 客户端
+    const supabase = await getSupabaseClientAsync(token);
+
+    const body = await request.json();
     const { id, name, description, is_default } = body;
 
     if (!id) {
@@ -212,18 +193,20 @@ export async function PUT(request: NextRequest) {
 // 删除课程版本
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient();
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    // 获取用户 ID
+    // 获取用户 ID 和 token
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    const userId = await getUserIdFromToken(token);
+    const token = extractToken(authHeader);
+    const userId = getUserIdFromToken(token);
 
-    if (!userId) {
+    if (!userId || !token) {
       return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
+
+    // 使用 token 创建 Supabase 客户端
+    const supabase = await getSupabaseClientAsync(token);
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
 
     if (!id) {
       return NextResponse.json({ error: '缺少版本 ID' }, { status: 400 });
@@ -254,30 +237,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-// 返回需要执行的迁移 SQL
-function getMigrationSQL(): string {
-  return `
--- 1. 创建课程版本表
-CREATE TABLE IF NOT EXISTS curriculum_versions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  language_id UUID NOT NULL REFERENCES programming_languages(id) ON DELETE CASCADE,
-  name VARCHAR(100) NOT NULL,
-  description TEXT,
-  is_active BOOLEAN DEFAULT true,
-  is_default BOOLEAN DEFAULT false,
-  user_id UUID NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 2. 为 course_units 添加 version_id 字段
-ALTER TABLE course_units ADD COLUMN IF NOT EXISTS version_id UUID REFERENCES curriculum_versions(id) ON DELETE SET NULL;
-
--- 3. 创建索引
-CREATE INDEX IF NOT EXISTS idx_curriculum_versions_language_id ON curriculum_versions(language_id);
-CREATE INDEX IF NOT EXISTS idx_curriculum_versions_user_id ON curriculum_versions(user_id);
-CREATE INDEX IF NOT EXISTS idx_course_units_version_id ON course_units(version_id);
-`;
 }
