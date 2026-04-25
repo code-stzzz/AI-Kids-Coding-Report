@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
       // 按版本查询
       query = query.eq('version_id', versionId);
     } else if (languageId) {
-      // 按语言查询（兼容旧逻辑，查询没有版本关联的课程单元）
-      query = query.eq('language_id', languageId).is('version_id', null);
+      // 按语言查询（查询该语言下所有版本的课程单元）
+      query = query.eq('language_id', languageId);
     }
 
     const { data, error } = await query;

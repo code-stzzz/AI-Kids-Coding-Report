@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdminClient();
     const body = await request.json();
 
-    // 从课程单元获取 language_id
+    // 从课程单元获取 language_id（用于后续逻辑，不存储到报告中）
     const { data: courseUnit } = await supabase
       .from('course_units')
       .select('language_id')
@@ -121,13 +121,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '课程单元不存在' }, { status: 400 });
     }
 
-    // 插入学习报告
+    // 插入学习报告（只使用表中存在的字段）
     const { data, error } = await supabase
       .from('study_reports')
       .insert({
         student_id: body.student_id,
         course_unit_id: body.course_unit_id,
-        language_id: courseUnit.language_id,
         radar_dimensions: body.radar_dimensions,
         core_strengths: body.core_strengths,
         areas_to_improve: body.areas_to_improve,
@@ -138,8 +137,6 @@ export async function POST(request: NextRequest) {
         improvement_plan_2: body.improvement_plan_2,
         improvement_plan_3: body.improvement_plan_3,
         competition_plans: body.competition_plans,
-        is_completed: true,
-        generated_at: new Date().toISOString(),
         user_id: userId,
       })
       .select()
