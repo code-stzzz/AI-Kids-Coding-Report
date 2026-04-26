@@ -19,6 +19,7 @@ import {
   getLanguages,
   getClasses,
   getStudents,
+  getVersions,
   createClass,
   updateClass,
   deleteClass,
@@ -28,13 +29,15 @@ import {
   deleteStudent,
   ProgrammingLanguage,
   Class,
-  Student
+  Student,
+  CurriculumVersion
 } from '@/lib/data-api';
 
 export default function ClassesPage() {
   const [languages, setLanguages] = useState<ProgrammingLanguage[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [versions, setVersions] = useState<CurriculumVersion[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(false);
@@ -42,7 +45,7 @@ export default function ClassesPage() {
   // Class Modal State
   const [showClassModal, setShowClassModal] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
-  const [classForm, setClassForm] = useState({ name: '', description: '' });
+  const [classForm, setClassForm] = useState({ name: '', description: '', default_version_id: '' });
   
   // Student Modal State
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -57,6 +60,7 @@ export default function ClassesPage() {
   const [addMode, setAddMode] = useState<'single' | 'bulk'>('single');
   
   const [saving, setSaving] = useState(false);
+  const [filteredVersions, setFilteredVersions] = useState<CurriculumVersion[]>([]);
 
   useEffect(() => {
     loadData();
@@ -97,6 +101,13 @@ export default function ClassesPage() {
         if (langData.length > 0 && !selectedLanguage) {
           setSelectedLanguage(langData[0].id);
         }
+        // 加载所有版本的名称映射（用于班级卡片显示）
+        const allVersions: CurriculumVersion[] = [];
+        for (const lang of langData) {
+          const langVersions = await getVersions(lang.id);
+          allVersions.push(...langVersions);
+        }
+        setVersions(allVersions);
       }
     } catch (error) {
       console.error('加载数据失败:', error);
@@ -154,15 +165,30 @@ export default function ClassesPage() {
   };
 
   // Class Operations
-  const openAddClass = () => {
+  const openAddClass = async () => {
     setEditingClass(null);
-    setClassForm({ name: '', description: '' });
+    setClassForm({ name: '', description: '', default_version_id: '' });
+    // 过滤当前语言的版本列表
+    const filtered = versions.filter(v => v.language_id === selectedLanguage);
+    setFilteredVersions(filtered);
+    // 如果有默认版本，自动选中
+    const defaultVersion = filtered.find(v => v.is_default);
+    if (defaultVersion) {
+      setClassForm(prev => ({ ...prev, default_version_id: defaultVersion.id }));
+    }
     setShowClassModal(true);
   };
 
-  const openEditClass = (cls: Class) => {
+  const openEditClass = async (cls: Class) => {
     setEditingClass(cls);
-    setClassForm({ name: cls.name, description: cls.description || '' });
+    setClassForm({ 
+      name: cls.name, 
+      description: cls.description || '', 
+      default_version_id: cls.default_version_id || '' 
+    });
+    // 过滤该班级语言的版本列表
+    const filtered = versions.filter(v => v.language_id === cls.language_id);
+    setFilteredVersions(filtered);
     setShowClassModal(true);
   };
 
@@ -179,14 +205,16 @@ export default function ClassesPage() {
         await updateClass({
           id: editingClass.id,
           name: classForm.name,
-          language_id: selectedLanguage,
-          description: classForm.description || undefined
+          language_id: editingClass.language_id,
+          description: classForm.description || undefined,
+          default_version_id: classForm.default_version_id || undefined
         });
       } else {
         await createClass({
           name: classForm.name,
           language_id: selectedLanguage,
-          description: classForm.description || undefined
+          description: classForm.description || undefined,
+          default_version_id: classForm.default_version_id || undefined
         });
       }
       await loadData();
@@ -404,6 +432,11 @@ export default function ClassesPage() {
                             {classStudents.length} 名学生
                             {cls.description && ` · ${cls.description}`}
                           </p>
+                          {cls.default_version_id && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              默认版本: {versions.find(v => v.id === cls.default_version_id)?.name || '未设置'}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -536,6 +569,29 @@ export default function ClassesPage() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
+
+              {filteredVersions.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    默认课程版本
+                  </label>
+                  <select
+                    value={classForm.default_version_id}
+                    onChange={(e) => setClassForm({...classForm, default_version_id: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">请选择版本</option>
+                    {filteredVersions.map(v => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} {v.is_default ? '(默认)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    学生生成学习报告时将使用此版本的课程内容
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t bg-gray-50 flex items-center justify-end gap-3">

@@ -112,9 +112,8 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
       setClassInfo(classData);
       
       // Load related data using language_id from class
-      const [studentLanguageData, studentCourseData, existingReports] = await Promise.all([
+      const [studentLanguageData, existingReports] = await Promise.all([
         getLanguages(),
-        getCourseUnits({ languageId: classData.language_id }),
         getReports({ studentId })
       ]);
       
@@ -122,6 +121,15 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
       const lang = studentLanguageData.find(l => l.id === classData.language_id);
       setLanguage(lang || null);
       
+      // Load course units using class default version
+      let studentCourseData: CourseUnit[] = [];
+      if (classData.default_version_id) {
+        // Use class default version
+        studentCourseData = await getCourseUnits({ versionId: classData.default_version_id });
+      } else {
+        // Fallback to language (for backward compatibility)
+        studentCourseData = await getCourseUnits({ languageId: classData.language_id });
+      }
       setCourseUnits(studentCourseData);
       
       // Load latest report if exists

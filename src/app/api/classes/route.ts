@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
         name: body.name,
         language_id: body.language_id,
         description: body.description || null,
+        default_version_id: body.default_version_id || null,
         user_id: userId,
       })
       .select()
@@ -191,6 +192,7 @@ export async function PUT(request: NextRequest) {
         name: body.name,
         language_id: body.language_id,
         description: body.description,
+        default_version_id: body.default_version_id,
         updated_at: new Date().toISOString(),
       })
       .eq('id', body.id)

@@ -300,6 +300,7 @@ export interface Class {
   language_id: string;
   name: string;
   description: string | null;
+  default_version_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -322,6 +323,7 @@ export async function createClass(data: {
   name: string;
   language_id: string;
   description?: string;
+  default_version_id?: string | null;
 }): Promise<Class> {
   const res = await authFetch('/api/classes', {
     method: 'POST',
@@ -338,6 +340,7 @@ export async function updateClass(data: {
   name: string;
   language_id: string;
   description?: string;
+  default_version_id?: string | null;
 }): Promise<Class> {
   const res = await authFetch('/api/classes', {
     method: 'PUT',
