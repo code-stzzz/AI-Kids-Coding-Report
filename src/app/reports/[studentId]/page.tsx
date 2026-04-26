@@ -11,12 +11,14 @@ import {
   AlertCircle,
   CheckCircle,
   Eye,
-  RefreshCw
+  RefreshCw,
+  BookOpen,
+  GitBranch,
+  GraduationCap
 } from 'lucide-react';
 import { 
   getLanguages,
-  getClasses,
-  getStudents,
+  getVersions,
   getCourseUnits,
   getReports,
   createReport,
@@ -28,7 +30,8 @@ import {
   Student,
   CourseUnit,
   StudyReport,
-  RadarDimension
+  RadarDimension,
+  CurriculumVersion
 } from '@/lib/data-api';
 import { RadarChart } from '@/components/RadarChart';
 import { PosterGenerator } from '@/components/PosterGenerator';
@@ -59,10 +62,15 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
   // Data
   const [student, setStudent] = useState<Student | null>(null);
   const [classInfo, setClassInfo] = useState<Class | null>(null);
-  const [language, setLanguage] = useState<ProgrammingLanguage | null>(null);
+  const [languages, setLanguages] = useState<ProgrammingLanguage[]>([]);
+  const [versions, setVersions] = useState<CurriculumVersion[]>([]);
   const [courseUnits, setCourseUnits] = useState<CourseUnit[]>([]);
-  const [selectedCourseUnitId, setSelectedCourseUnitId] = useState<string>('');
   const [currentReport, setCurrentReport] = useState<StudyReport | null>(null);
+  
+  // Selection State
+  const [selectedLanguageId, setSelectedLanguageId] = useState<string>('');
+  const [selectedVersionId, setSelectedVersionId] = useState<string>('');
+  const [selectedCourseUnitId, setSelectedCourseUnitId] = useState<string>('');
   
   // Form State
   const [radarDimensions, setRadarDimensions] = useState<RadarDimension[]>(
@@ -74,11 +82,29 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
   const [improvementDescription, setImprovementDescription] = useState('');
   const [encouragementMessage, setEncouragementMessage] = useState('');
 
+  // Computed values
+  const selectedLanguage = languages.find(l => l.id === selectedLanguageId);
+  const selectedCourseUnit = courseUnits.find(c => c.id === selectedCourseUnitId);
+
   useEffect(() => {
-    loadData();
+    loadInitialData();
   }, [studentId]);
 
-  const loadData = async () => {
+  // 加载版本列表（当语言变化时）
+  useEffect(() => {
+    if (selectedLanguageId) {
+      loadVersions(selectedLanguageId);
+    }
+  }, [selectedLanguageId]);
+
+  // 加载课程单元（当版本变化时）
+  useEffect(() => {
+    if (selectedVersionId) {
+      loadCourseUnits(selectedVersionId);
+    }
+  }, [selectedVersionId]);
+
+  const loadInitialData = async () => {
     try {
       setLoading(true);
       
@@ -90,14 +116,13 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
           throw new Error('学生不存在');
         }
       } catch {
-        // 学生不存在时，跳转回报告列表页
         console.error('学生不存在:', studentId);
         window.location.href = '/reports';
         return;
       }
       setStudent(studentData);
       
-      // Load class info first
+      // Load class info
       let classData: Class | null;
       try {
         classData = await getClassById(studentData.class_id);
@@ -111,28 +136,17 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
       }
       setClassInfo(classData);
       
-      // Load related data using language_id from class
-      const [studentLanguageData, existingReports] = await Promise.all([
-        getLanguages(),
-        getReports({ studentId })
-      ]);
+      // Load all languages
+      const languageData = await getLanguages();
+      setLanguages(languageData);
       
-      // Find language
-      const lang = studentLanguageData.find(l => l.id === classData.language_id);
-      setLanguage(lang || null);
-      
-      // Load course units using class default version
-      let studentCourseData: CourseUnit[] = [];
-      if (classData.default_version_id) {
-        // Use class default version
-        studentCourseData = await getCourseUnits({ versionId: classData.default_version_id });
-      } else {
-        // Fallback to language (for backward compatibility)
-        studentCourseData = await getCourseUnits({ languageId: classData.language_id });
+      // Set default language from class
+      if (classData.language_id) {
+        setSelectedLanguageId(classData.language_id);
       }
-      setCourseUnits(studentCourseData);
       
-      // Load latest report if exists
+      // Load existing reports
+      const existingReports = await getReports({ studentId });
       if (existingReports.length > 0) {
         const latest = existingReports[0];
         setCurrentReport(latest);
@@ -143,8 +157,6 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
         setProgressDescription(latest.progress_description || '');
         setImprovementDescription(latest.improvement_description || '');
         setEncouragementMessage(latest.encouragement_message || '');
-      } else if (studentCourseData.length > 0) {
-        setSelectedCourseUnitId(studentCourseData[0].id);
       }
     } catch (error) {
       console.error('加载数据失败:', error);
@@ -153,7 +165,46 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
     }
   };
 
-  const selectedCourseUnit = courseUnits.find(c => c.id === selectedCourseUnitId);
+  const loadVersions = async (languageId: string) => {
+    try {
+      const versionData = await getVersions(languageId);
+      setVersions(versionData);
+      
+      // 默认选择第一个版本
+      if (versionData.length > 0) {
+        // 如果班级有默认版本，优先使用
+        if (classInfo?.default_version_id) {
+          const classVersion = versionData.find(v => v.id === classInfo.default_version_id);
+          if (classVersion) {
+            setSelectedVersionId(classVersion.id);
+          } else {
+            setSelectedVersionId(versionData[0].id);
+          }
+        } else {
+          setSelectedVersionId(versionData[0].id);
+        }
+      } else {
+        setSelectedVersionId('');
+        setCourseUnits([]);
+      }
+    } catch (error) {
+      console.error('加载版本失败:', error);
+    }
+  };
+
+  const loadCourseUnits = async (versionId: string) => {
+    try {
+      const courseData = await getCourseUnits({ versionId });
+      setCourseUnits(courseData);
+      
+      // 如果没有已保存的课程单元，默认选择第一个
+      if (!currentReport && courseData.length > 0) {
+        setSelectedCourseUnitId(courseData[0].id);
+      }
+    } catch (error) {
+      console.error('加载课程单元失败:', error);
+    }
+  };
 
   const handleDimensionChange = (index: number, score: number) => {
     const newDimensions = [...radarDimensions];
@@ -162,7 +213,7 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
   };
 
   const handleGenerateWithAI = async () => {
-    if (!selectedCourseUnit || !language) {
+    if (!selectedCourseUnit || !selectedLanguage) {
       alert('请先选择课程单元');
       return;
     }
@@ -175,7 +226,7 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          languageName: language.name,
+          languageName: selectedLanguage.name,
           courseUnitName: selectedCourseUnit.name,
           currentStageContent: selectedCourseUnit.current_stage_content,
           nextStageContent: selectedCourseUnit.next_stage_content,
@@ -210,7 +261,7 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
   };
 
   const handleSaveReport = async () => {
-    if (!selectedCourseUnit || !language) {
+    if (!selectedCourseUnit || !selectedLanguage) {
       alert('请先选择课程单元');
       return;
     }
@@ -237,7 +288,6 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
         await createReport(reportData);
       }
       
-      await loadData();
       alert('保存成功');
     } catch (error) {
       console.error('保存失败:', error);
@@ -255,7 +305,7 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
     );
   }
 
-  if (!student || !classInfo || !language) {
+  if (!student || !classInfo) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -287,7 +337,7 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
                   学习报告编辑 - {student.name}
                 </h1>
                 <p className="text-sm text-gray-500">
-                  {language.name} · {classInfo.name}
+                  {classInfo.name}
                 </p>
               </div>
             </div>
@@ -317,23 +367,80 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left Column */}
           <div className="space-y-6">
-            {/* Course Selection */}
+            {/* Step 1: 选择班级和课程单元 */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                选择课程单元
-              </h2>
-              <select
-                value={selectedCourseUnitId}
-                onChange={(e) => setSelectedCourseUnitId(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">请选择课程单元...</option>
-                {courseUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    第{unit.period_number}期 · {unit.name}{unit.version_name ? ` (${unit.version_name})` : ''}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  1
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  选择编程语言和课程单元
+                </h2>
+              </div>
+              
+              <div className="space-y-4">
+                {/* 编程语言选择 */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <GraduationCap className="w-4 h-4 text-gray-400" />
+                    编程语言
+                  </label>
+                  <select
+                    value={selectedLanguageId}
+                    onChange={(e) => setSelectedLanguageId(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="">请选择编程语言...</option>
+                    {languages.map((lang) => (
+                      <option key={lang.id} value={lang.id}>
+                        {lang.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 版本选择 */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <GitBranch className="w-4 h-4 text-gray-400" />
+                    课程版本
+                  </label>
+                  <select
+                    value={selectedVersionId}
+                    onChange={(e) => setSelectedVersionId(e.target.value)}
+                    disabled={!selectedLanguageId || versions.length === 0}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    <option value="">请选择课程版本...</option>
+                    {versions.map((version) => (
+                      <option key={version.id} value={version.id}>
+                        {version.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 课程单元选择 */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <BookOpen className="w-4 h-4 text-gray-400" />
+                    课程单元
+                  </label>
+                  <select
+                    value={selectedCourseUnitId}
+                    onChange={(e) => setSelectedCourseUnitId(e.target.value)}
+                    disabled={!selectedVersionId || courseUnits.length === 0}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    <option value="">请选择课程单元...</option>
+                    {courseUnits.map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        第{unit.period_number}期 · {unit.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
               
               {selectedCourseUnit && (
                 <div className="mt-4 p-4 bg-blue-50 rounded-xl">
@@ -349,7 +456,10 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
 
             {/* Radar Chart */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  2
+                </div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   能力雷达图评分
                 </h2>
@@ -396,9 +506,14 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
           <div className="space-y-6">
             {/* Core Info */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                核心信息
-              </h2>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  3
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  核心信息
+                </h2>
+              </div>
               
               <div className="space-y-4">
                 <div>
@@ -431,14 +546,17 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
 
             {/* AI Generation */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  4
+                </div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   AI 智能生成
                 </h2>
                 <button
                   onClick={handleGenerateWithAI}
                   disabled={generating || !selectedCourseUnit}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                  className="ml-auto px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-50 flex items-center gap-2"
                 >
                   {generating ? (
                     <>
@@ -514,17 +632,16 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
       </main>
 
       {/* Poster Preview Modal */}
-      {showPoster && (
+      {showPoster && selectedCourseUnit && selectedLanguage && (
         <PosterGenerator
           data={{
             studentName: student.name,
-            languageName: language.name,
-            courseUnitName: selectedCourseUnit?.name || '',
+            languageName: selectedLanguage.name,
+            courseUnitName: selectedCourseUnit.name,
             radarDimensions,
-            currentStageContent: selectedCourseUnit?.current_stage_content || '',
+            currentStageContent: selectedCourseUnit.current_stage_content || '',
             nextStageContent: (() => {
               // 自动获取下一个单元的内容
-              if (!selectedCourseUnit) return '';
               const nextUnit = courseUnits.find(
                 c => c.period_number === selectedCourseUnit.period_number + 1
               );
