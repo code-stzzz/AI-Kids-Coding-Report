@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { 
   getLanguages,
+  getVersions,
   getClasses,
   getClassById,
   getStudents,
@@ -27,7 +28,8 @@ import {
   Student,
   CourseUnit,
   StudyReport,
-  RadarDimension
+  RadarDimension,
+  CurriculumVersion
 } from '@/lib/data-api';
 import { RadarChart } from '@/components/RadarChart';
 import { PosterGenerator } from '@/components/PosterGenerator';
@@ -54,6 +56,8 @@ function StudentReportContent() {
   const [cls, setCls] = useState<Class | null>(null);
   const [language, setLanguage] = useState<ProgrammingLanguage | null>(null);
   const [languages, setLanguages] = useState<ProgrammingLanguage[]>([]); // 所有语言
+  const [versions, setVersions] = useState<CurriculumVersion[]>([]); // 当前语言的版本
+  const [selectedVersionId, setSelectedVersionId] = useState<string>(''); // 选择的版本
   const [courseUnits, setCourseUnits] = useState<CourseUnit[]>([]);
   const [allCourseUnits, setAllCourseUnits] = useState<CourseUnit[]>([]); // 所有语言的课程单元
   const [selectedCourseUnit, setSelectedCourseUnit] = useState<CourseUnit | null>(null);
@@ -90,6 +94,66 @@ function StudentReportContent() {
       loadData();
     }
   }, [studentId]);
+
+  // 加载版本列表（当语言变化时）
+  useEffect(() => {
+    if (cls?.language_id) {
+      loadVersions(cls.language_id);
+    }
+  }, [cls?.language_id]);
+
+  // 加载课程单元（当版本变化时）
+  useEffect(() => {
+    if (selectedVersionId) {
+      loadCourseUnitsByVersion(selectedVersionId);
+    }
+  }, [selectedVersionId]);
+
+  const loadVersions = async (languageId: string) => {
+    try {
+      const versionData = await getVersions(languageId);
+      setVersions(versionData);
+      
+      // 默认选择第一个版本
+      if (versionData.length > 0) {
+        // 如果班级有默认版本，优先使用
+        if (cls?.default_version_id) {
+          const classVersion = versionData.find(v => v.id === cls.default_version_id);
+          if (classVersion) {
+            setSelectedVersionId(classVersion.id);
+          } else {
+            setSelectedVersionId(versionData[0].id);
+          }
+        } else {
+          setSelectedVersionId(versionData[0].id);
+        }
+      } else {
+        setSelectedVersionId('');
+        setCourseUnits([]);
+      }
+    } catch (error) {
+      console.error('加载版本失败:', error);
+    }
+  };
+
+  const loadCourseUnitsByVersion = async (versionId: string) => {
+    try {
+      const courseData = await getCourseUnits({ versionId });
+      setCourseUnits(courseData);
+      
+      // 根据学习周期自动选择课程单元
+      if (student) {
+        const defaultUnit = courseData.find(c => c.period_number === student.learning_cycle);
+        if (defaultUnit) {
+          setSelectedCourseUnit(defaultUnit);
+        } else if (courseData.length > 0) {
+          setSelectedCourseUnit(courseData[0]);
+        }
+      }
+    } catch (error) {
+      console.error('加载课程单元失败:', error);
+    }
+  };
 
   // 当课程单元变化时，加载上次报告用于对比，并设置默认下阶段课程单元
   useEffect(() => {
@@ -150,15 +214,14 @@ function StudentReportContent() {
       }
       setLanguage(langData);
       
-      // 加载本语言的课程单元
-      const courseData = await getCourseUnits({ languageId: classData.language_id });
-      setCourseUnits(courseData);
-      
       // 加载所有语言的课程单元（用于下阶段选择）
       const allUnits: CourseUnit[] = [];
       for (const lang of languages) {
-        const units = await getCourseUnits({ languageId: lang.id });
-        allUnits.push(...units);
+        const versionsForLang = await getVersions(lang.id);
+        for (const version of versionsForLang) {
+          const units = await getCourseUnits({ versionId: version.id });
+          allUnits.push(...units);
+        }
       }
       setAllCourseUnits(allUnits);
       
@@ -188,23 +251,8 @@ function StudentReportContent() {
         setImprovementPlan2(report.improvement_plan_2 || '');
         setImprovementPlan3(report.improvement_plan_3 || '');
         setCompetitionPlans(report.competition_plans || '');
-        
-        // 设置课程单元
-        const course = courseData.find(c => c.id === report.course_unit_id);
-        if (course) setSelectedCourseUnit(course);
-      } else {
-        // 优先使用URL参数中的课程单元ID
-        if (courseUnitIdParam) {
-          const courseFromParam = courseData.find(c => c.id === courseUnitIdParam);
-          if (courseFromParam) {
-            setSelectedCourseUnit(courseFromParam);
-          }
-        } else {
-          // 根据学习周期自动选择课程单元
-          const defaultUnit = courseData.find(c => c.period_number === studentData.learning_cycle);
-          if (defaultUnit) setSelectedCourseUnit(defaultUnit);
-        }
       }
+      // 课程单元会在版本加载后自动设置
     } catch (error) {
       console.error('加载数据失败:', error);
     } finally {
@@ -212,17 +260,21 @@ function StudentReportContent() {
     }
   };
 
-  // 切换到上一个/下一个学生（保留课程单元参数）
+  // 切换到上一个/下一个学生（保留课程单元和版本参数）
   const navigateStudent = (direction: 'prev' | 'next') => {
     const courseUnitId = selectedCourseUnit?.id || courseUnitIdParam;
-    const courseParam = courseUnitId ? `&courseUnitId=${courseUnitId}` : '';
+    const params = new URLSearchParams();
+    if (classId) params.set('classId', classId);
+    if (courseUnitId) params.set('courseUnitId', courseUnitId);
+    if (selectedVersionId) params.set('versionId', selectedVersionId);
+    const queryString = params.toString();
     
     if (direction === 'prev' && currentStudentIndex > 0) {
       const prevStudent = allStudents[currentStudentIndex - 1];
-      router.push(`/reports/generate/${prevStudent.id}?classId=${classId}${courseParam}`);
+      router.push(`/reports/generate/${prevStudent.id}?${queryString}`);
     } else if (direction === 'next' && currentStudentIndex < allStudents.length - 1) {
       const nextStudent = allStudents[currentStudentIndex + 1];
-      router.push(`/reports/generate/${nextStudent.id}?classId=${classId}${courseParam}`);
+      router.push(`/reports/generate/${nextStudent.id}?${queryString}`);
     }
   };
 
@@ -413,6 +465,24 @@ function StudentReportContent() {
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">课程单元</h2>
               <div className="space-y-4">
+                {/* 版本选择 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">课程版本</label>
+                  <select
+                    value={selectedVersionId}
+                    onChange={(e) => setSelectedVersionId(e.target.value)}
+                    disabled={versions.length === 0}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    <option value="">请选择课程版本</option>
+                    {versions.map((version) => (
+                      <option key={version.id} value={version.id}>
+                        {version.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">本阶段课程</label>
                   <select
@@ -421,12 +491,13 @@ function StudentReportContent() {
                       const unit = courseUnits.find(c => c.id === e.target.value);
                       setSelectedCourseUnit(unit || null);
                     }}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                    disabled={!selectedVersionId}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
                   >
                     <option value="">请选择课程单元</option>
                     {courseUnits.map((unit) => (
                       <option key={unit.id} value={unit.id}>
-                        {unit.name} - 第{unit.period_number}期
+                        {unit.name} - 第{unit.period_number}期 {unit.version_name ? `(${unit.version_name})` : ''}
                       </option>
                     ))}
                   </select>
@@ -453,7 +524,7 @@ function StudentReportContent() {
                           .sort((a, b) => a.period_number - b.period_number)
                           .map((unit) => (
                             <option key={unit.id} value={unit.id}>
-                              {unit.name} - 第{unit.period_number}期
+                              {unit.name} - 第{unit.period_number}期 {unit.version_name ? `(${unit.version_name})` : ''}
                             </option>
                           ))
                         }
