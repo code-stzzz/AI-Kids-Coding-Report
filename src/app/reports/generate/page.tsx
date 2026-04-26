@@ -10,7 +10,8 @@ import {
   Circle,
   ChevronRight,
   BookOpen,
-  Layers
+  Layers,
+  Hash
 } from 'lucide-react';
 import { 
   getLanguages,
@@ -29,10 +30,17 @@ interface StudentWithStatus extends Student {
   reportId?: string;
 }
 
+interface CurriculumVersion {
+  id: string;
+  name: string;
+}
+
 export default function GenerateReportsPage() {
   const [languages, setLanguages] = useState<ProgrammingLanguage[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
+  const [versions, setVersions] = useState<CurriculumVersion[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
+  const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedCourseUnit, setSelectedCourseUnit] = useState<string>('');
   const [students, setStudents] = useState<StudentWithStatus[]>([]);
@@ -41,10 +49,30 @@ export default function GenerateReportsPage() {
   const [loading, setLoading] = useState(true);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [initializing, setInitializing] = useState(false);
+  const [versionsLoading, setVersionsLoading] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // 当选择编程语言时，加载版本列表
+  useEffect(() => {
+    if (selectedLanguage) {
+      loadVersions(selectedLanguage);
+    } else {
+      setVersions([]);
+      setSelectedVersion('');
+    }
+  }, [selectedLanguage]);
+
+  // 当选择版本时，重置班级和课程单元选择
+  useEffect(() => {
+    if (selectedVersion) {
+      setSelectedClass('');
+      setCourseUnits([]);
+      setSelectedCourseUnit('');
+    }
+  }, [selectedVersion]);
 
   const loadData = async () => {
     try {
@@ -89,30 +117,74 @@ export default function GenerateReportsPage() {
     }
   };
 
-  // 当选择班级后，加载学生和课程数据
+  // 加载指定语言的版本列表
+  const loadVersions = async (languageId: string) => {
+    setVersionsLoading(true);
+    try {
+      const response = await fetch(`/api/versions?language_id=${languageId}`);
+      const data = await response.json();
+      if (data.data) {
+        setVersions(data.data);
+        // 默认选择第一个版本
+        if (data.data.length > 0) {
+          setSelectedVersion(data.data[0].id);
+        } else {
+          setSelectedVersion('');
+        }
+      }
+    } catch (error) {
+      console.error('加载版本列表失败:', error);
+      setVersions([]);
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  // 加载课程单元（基于选中的版本）
+  const loadCourseUnits = async () => {
+    if (!selectedVersion) return;
+    
+    try {
+      const response = await fetch(`/api/courses?version_id=${selectedVersion}`);
+      const data = await response.json();
+      if (data.data) {
+        setCourseUnits(data.data);
+        if (data.data.length > 0) {
+          setSelectedCourseUnit(data.data[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('加载课程单元失败:', error);
+    }
+  };
+
+  // 当选择班级后，加载学生数据
   useEffect(() => {
-    if (selectedClass) {
+    if (selectedClass && selectedVersion) {
       loadStudentsAndReports();
+      loadCourseUnits();
     } else {
       setStudents([]);
-      setCourseUnits([]);
       setSelectedCourseUnit('');
     }
-  }, [selectedClass]);
+  }, [selectedClass, selectedVersion]);
+
+  // 当版本变化后，也要重新加载课程单元
+  useEffect(() => {
+    if (selectedVersion && selectedClass) {
+      loadCourseUnits();
+    }
+  }, [selectedVersion]);
 
   const loadStudentsAndReports = async () => {
     if (!selectedClass) return;
     
     setStudentsLoading(true);
     try {
-      const cls = classes.find(c => c.id === selectedClass);
-      if (!cls) return;
-
-      // 加载学生、报告和课程单元
-      const [studentData, reportData, allCourses] = await Promise.all([
+      // 加载学生和报告数据
+      const [studentData, reportData] = await Promise.all([
         getStudents(selectedClass),
-        getReports(),
-        getCourseUnits({ languageId: cls.language_id })
+        getReports()
       ]);
 
       // 保存所有报告数据
@@ -133,13 +205,6 @@ export default function GenerateReportsPage() {
         hasReport: false,
         reportId: undefined
       })));
-      
-      setCourseUnits(allCourses);
-      
-      // 默认选择第一个课程单元
-      if (allCourses.length > 0) {
-        setSelectedCourseUnit(allCourses[0].id);
-      }
     } catch (error) {
       console.error('加载学生数据失败:', error);
     } finally {
@@ -217,14 +282,15 @@ export default function GenerateReportsPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Step 1: 选择语言、班级和课程单元 */}
+        {/* Step 1: 选择语言、版本、班级和课程单元 */}
         <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
             <h2 className="text-lg font-semibold text-gray-900">选择班级和课程单元</h2>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-4 gap-4">
+            {/* 编程语言 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <BookOpen className="w-4 h-4 inline mr-1" />
@@ -246,7 +312,33 @@ export default function GenerateReportsPage() {
                 ))}
               </select>
             </div>
+
+            {/* 课程版本 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Hash className="w-4 h-4 inline mr-1" />
+                课程版本
+              </label>
+              <select
+                value={selectedVersion}
+                onChange={(e) => setSelectedVersion(e.target.value)}
+                disabled={!selectedLanguage || versionsLoading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              >
+                <option value="">请选择版本</option>
+                {versionsLoading ? (
+                  <option value="">加载中...</option>
+                ) : (
+                  versions.map((version) => (
+                    <option key={version.id} value={version.id}>
+                      {version.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
             
+            {/* 班级 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Users className="w-4 h-4 inline mr-1" />
@@ -255,7 +347,7 @@ export default function GenerateReportsPage() {
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                disabled={!selectedLanguage}
+                disabled={!selectedVersion}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
               >
                 <option value="">请选择班级</option>
@@ -267,6 +359,7 @@ export default function GenerateReportsPage() {
               </select>
             </div>
             
+            {/* 课程单元 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Layers className="w-4 h-4 inline mr-1" />
@@ -281,7 +374,7 @@ export default function GenerateReportsPage() {
                 <option value="">请选择课程单元</option>
                 {courseUnits.map((unit) => (
                   <option key={unit.id} value={unit.id}>
-                    {unit.name} - 第{unit.period_number}期
+                    第{unit.period_number}期 · {unit.name} {unit.version_name ? `(${unit.version_name})` : ''}
                   </option>
                 ))}
               </select>
@@ -293,6 +386,7 @@ export default function GenerateReportsPage() {
             <div className="mt-4 p-4 bg-blue-50 rounded-xl">
               <h4 className="text-sm font-medium text-blue-800 mb-2">
                 当前课程：{selectedUnit.name}（第{selectedUnit.period_number}期）
+                {selectedUnit.version_name && <span className="ml-2 text-blue-600">版本：{selectedUnit.version_name}</span>}
               </h4>
               <p className="text-sm text-blue-700 whitespace-pre-line line-clamp-3">
                 {selectedUnit.current_stage_content}
@@ -310,7 +404,7 @@ export default function GenerateReportsPage() {
                 <h2 className="text-lg font-semibold text-gray-900">学生列表</h2>
               </div>
               {!selectedCourseUnit && (
-                <p className="text-sm text-amber-600">⚠️ 请先选择课程单元</p>
+                <p className="text-sm text-amber-600">请先选择课程单元</p>
               )}
             </div>
 
@@ -395,7 +489,7 @@ export default function GenerateReportsPage() {
             <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">请先选择班级和课程单元</h3>
             <p className="text-gray-500">
-              选择编程语言、班级和课程单元后，将显示该班级的学生列表
+              选择编程语言、版本、班级和课程单元后，将显示该班级的学生列表
             </p>
           </div>
         )}
