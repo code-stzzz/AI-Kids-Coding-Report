@@ -224,6 +224,7 @@ export interface CourseUnit {
   id: string;
   language_id: string;
   version_id: string | null;
+  version_name?: string | null; // 版本名称，通过 join 获取
   name: string;
   period_number: number;
   current_stage_content: string;

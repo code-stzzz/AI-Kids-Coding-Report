@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getSupabaseClient, getSupabaseServiceRoleKey, getSupabaseCredentials } from '@/storage/database/supabase-client';
 import { getUserIdFromToken } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
 
 // 获取课程单元列表
 export async function GET(request: NextRequest) {
@@ -27,10 +28,45 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
+      console.error('[API /courses] Supabase error:', error);
       throw new Error(`获取课程单元失败: ${error.message}`);
     }
 
-    return NextResponse.json({ data });
+    // 手动获取版本名称（使用 service role key 绕过 RLS）
+    let versionMap: Record<string, string> = {};
+    if (data && data.length > 0) {
+      const versionIds = [...new Set(data.map(u => u.version_id).filter(Boolean))];
+      if (versionIds.length > 0) {
+        // 使用 service role key 查询版本表
+        const serviceRoleKey = getSupabaseServiceRoleKey();
+        const { url } = getSupabaseCredentials();
+        
+        if (serviceRoleKey) {
+          const adminClient = createClient(url, serviceRoleKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+          });
+          const { data: versions } = await adminClient
+            .from('curriculum_versions')
+            .select('id, name')
+            .in('id', versionIds);
+          
+          if (versions) {
+            versionMap = versions.reduce((acc, v) => {
+              acc[v.id] = v.name;
+              return acc;
+            }, {} as Record<string, string>);
+          }
+        }
+      }
+    }
+
+    // 添加版本名称
+    const processedData = (data || []).map((unit: any) => ({
+      ...unit,
+      version_name: unit.version_id ? (versionMap[unit.version_id] || null) : null
+    }));
+
+    return NextResponse.json({ data: processedData });
   } catch (error) {
     console.error('获取课程单元异常:', error);
     return NextResponse.json(

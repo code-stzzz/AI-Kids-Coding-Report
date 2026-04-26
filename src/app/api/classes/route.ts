@@ -107,8 +107,6 @@ export async function GET(request: NextRequest) {
     }
 
     const { data, error } = await query;
-    
-    console.log('[API /classes] 查询结果:', data?.length || 0, '条记录');
 
     if (error) {
       throw new Error(`获取班级失败: ${error.message}`);

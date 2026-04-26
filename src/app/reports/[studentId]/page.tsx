@@ -330,7 +330,7 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
                 <option value="">请选择课程单元...</option>
                 {courseUnits.map((unit) => (
                   <option key={unit.id} value={unit.id}>
-                    第{unit.period_number}期 · {unit.name}
+                    第{unit.period_number}期 · {unit.name}{unit.version_name ? ` (${unit.version_name})` : ''}
                   </option>
                 ))}
               </select>
