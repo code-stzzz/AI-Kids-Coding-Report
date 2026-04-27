@@ -51,6 +51,7 @@ function StudentReportContent() {
   const studentId = params.studentId as string;
   const classId = searchParams.get('classId');
   const courseUnitIdParam = searchParams.get('courseUnitId');
+  const versionIdParam = searchParams.get('versionId'); // 从 URL 获取版本 ID
   
   const [student, setStudent] = useState<Student | null>(null);
   const [cls, setCls] = useState<Class | null>(null);
@@ -64,6 +65,13 @@ function StudentReportContent() {
   const [selectedNextCourseUnit, setSelectedNextCourseUnit] = useState<CourseUnit | null>(null); // 选择的下阶段课程单元
   const [existingReport, setExistingReport] = useState<StudyReport | null>(null);
   const [previousReport, setPreviousReport] = useState<StudyReport | null>(null); // 上次报告（用于对比）
+  
+  // 下阶段三级选择的状态
+  const [nextLanguageId, setNextLanguageId] = useState<string>(''); // 下阶段选择 - 语言
+  const [nextVersionId, setNextVersionId] = useState<string>(''); // 下阶段选择 - 版本
+  const [nextVersions, setNextVersions] = useState<CurriculumVersion[]>([]); // 下阶段选择的版本列表
+  const [nextCourseUnits, setNextCourseUnits] = useState<CourseUnit[]>([]); // 下阶段选择的课程单元列表
+  const [allLanguagesVersions, setAllLanguagesVersions] = useState<{languageId: string; languageName: string; versions: CurriculumVersion[]}[]>([]); // 所有语言的版本数据
   
   // 班级学生列表（用于导航）
   const [allStudents, setAllStudents] = useState<Student[]>([]);
@@ -95,13 +103,6 @@ function StudentReportContent() {
     }
   }, [studentId]);
 
-  // 加载版本列表（当语言变化时）
-  useEffect(() => {
-    if (cls?.language_id) {
-      loadVersions(cls.language_id);
-    }
-  }, [cls?.language_id]);
-
   // 加载课程单元（当版本变化时）
   useEffect(() => {
     if (selectedVersionId) {
@@ -109,13 +110,35 @@ function StudentReportContent() {
     }
   }, [selectedVersionId]);
 
+  // 下阶段：加载版本列表（当语言变化时）
+  useEffect(() => {
+    if (nextLanguageId) {
+      loadNextVersions(nextLanguageId);
+    } else {
+      setNextVersions([]);
+      setNextVersionId('');
+      setNextCourseUnits([]);
+    }
+  }, [nextLanguageId]);
+
+  // 下阶段：加载课程单元（当版本变化时）
+  useEffect(() => {
+    if (nextVersionId) {
+      loadNextCourseUnits(nextVersionId);
+    } else {
+      setNextCourseUnits([]);
+    }
+  }, [nextVersionId]);
+
   const loadVersions = async (languageId: string) => {
     try {
       const versionData = await getVersions(languageId);
       setVersions(versionData);
       
-      // 默认选择第一个版本
-      if (versionData.length > 0) {
+      // 优先使用 URL 参数中的版本 ID
+      if (versionIdParam && versionData.some(v => v.id === versionIdParam)) {
+        setSelectedVersionId(versionIdParam);
+      } else if (versionData.length > 0) {
         // 如果班级有默认版本，优先使用
         if (cls?.default_version_id) {
           const classVersion = versionData.find(v => v.id === cls.default_version_id);
@@ -136,10 +159,43 @@ function StudentReportContent() {
     }
   };
 
+  const loadNextVersions = async (languageId: string) => {
+    try {
+      const versionData = await getVersions(languageId);
+      setNextVersions(versionData);
+      if (versionData.length > 0) {
+        setNextVersionId(versionData[0].id);
+      } else {
+        setNextVersionId('');
+        setNextCourseUnits([]);
+      }
+    } catch (error) {
+      console.error('加载下阶段版本失败:', error);
+    }
+  };
+
+  const loadNextCourseUnits = async (versionId: string) => {
+    try {
+      const courseData = await getCourseUnits({ versionId });
+      setNextCourseUnits(courseData);
+    } catch (error) {
+      console.error('加载下阶段课程单元失败:', error);
+    }
+  };
+
   const loadCourseUnitsByVersion = async (versionId: string) => {
     try {
       const courseData = await getCourseUnits({ versionId });
       setCourseUnits(courseData);
+      
+      // 优先使用 URL 参数中的课程单元 ID
+      if (courseUnitIdParam && courseData.some(c => c.id === courseUnitIdParam)) {
+        const unit = courseData.find(c => c.id === courseUnitIdParam);
+        if (unit) {
+          setSelectedCourseUnit(unit);
+          return;
+        }
+      }
       
       // 根据学习周期自动选择课程单元
       if (student) {
@@ -214,16 +270,24 @@ function StudentReportContent() {
       }
       setLanguage(langData);
       
-      // 加载所有语言的课程单元（用于下阶段选择）
-      const allUnits: CourseUnit[] = [];
+      // 加载所有语言及其版本数据（用于下阶段三级选择）
+      const langVersions: {languageId: string; languageName: string; versions: CurriculumVersion[]}[] = [];
       for (const lang of languages) {
         const versionsForLang = await getVersions(lang.id);
-        for (const version of versionsForLang) {
-          const units = await getCourseUnits({ versionId: version.id });
-          allUnits.push(...units);
+        if (versionsForLang.length > 0) {
+          langVersions.push({
+            languageId: lang.id,
+            languageName: lang.name,
+            versions: versionsForLang
+          });
         }
       }
-      setAllCourseUnits(allUnits);
+      setAllLanguagesVersions(langVersions);
+      
+      // 初始化下阶段选择：默认选择第一个有课程的语言
+      if (langVersions.length > 0) {
+        setNextLanguageId(langVersions[0].languageId);
+      }
       
       // 加载该班级所有学生（用于导航）
       if (classId) {
@@ -508,29 +572,60 @@ function StudentReportContent() {
                     下阶段学习内容
                     <span className="text-gray-400 font-normal ml-1">（可跨语言选择）</span>
                   </label>
-                  <select
-                    value={selectedNextCourseUnit?.id || ''}
-                    onChange={(e) => {
-                      const unit = allCourseUnits.find(c => c.id === e.target.value);
-                      setSelectedNextCourseUnit(unit || null);
-                    }}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">无下阶段内容</option>
-                    {languages.map((lang) => (
-                      <optgroup key={lang.id} label={lang.name}>
-                        {allCourseUnits
-                          .filter(u => u.language_id === lang.id)
-                          .sort((a, b) => a.period_number - b.period_number)
-                          .map((unit) => (
-                            <option key={unit.id} value={unit.id}>
-                              {unit.name} - 第{unit.period_number}期 {unit.version_name ? `(${unit.version_name})` : ''}
-                            </option>
-                          ))
-                        }
-                      </optgroup>
-                    ))}
-                  </select>
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* 选择语言 */}
+                    <select
+                      value={nextLanguageId}
+                      onChange={(e) => {
+                        setNextLanguageId(e.target.value);
+                        setSelectedNextCourseUnit(null);
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
+                      <option value="">选择语言</option>
+                      {allLanguagesVersions.map(lv => (
+                        <option key={lv.languageId} value={lv.languageId}>
+                          {lv.languageName}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    {/* 选择版本 */}
+                    <select
+                      value={nextVersionId}
+                      onChange={(e) => {
+                        setNextVersionId(e.target.value);
+                        setSelectedNextCourseUnit(null);
+                      }}
+                      disabled={!nextLanguageId}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
+                    >
+                      <option value="">选择版本</option>
+                      {nextVersions.map(v => (
+                        <option key={v.id} value={v.id}>
+                          {v.name}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    {/* 选择课程 */}
+                    <select
+                      value={selectedNextCourseUnit?.id || ''}
+                      onChange={(e) => {
+                        const unit = nextCourseUnits.find(c => c.id === e.target.value);
+                        setSelectedNextCourseUnit(unit || null);
+                      }}
+                      disabled={!nextVersionId}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
+                    >
+                      <option value="">选择课程</option>
+                      {nextCourseUnits.map(unit => (
+                        <option key={unit.id} value={unit.id}>
+                          {unit.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   {selectedNextCourseUnit && (
                     <p className="mt-2 text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
                       {selectedNextCourseUnit.current_stage_content}
