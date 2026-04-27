@@ -110,15 +110,18 @@ function StudentReportContent() {
     }
   }, [selectedVersionId]);
 
-  // 下阶段：加载版本列表（当语言变化时）
+  // 下阶段：加载版本列表（当语言变化时，用户手动切换）
   useEffect(() => {
-    if (nextLanguageId) {
-      loadNextVersions(nextLanguageId);
-    } else {
+    if (!nextLanguageId) {
       setNextVersions([]);
       setNextVersionId('');
       setNextCourseUnits([]);
+      return;
     }
+    
+    // 如果版本列表已经有数据且语言匹配，跳过（说明是 setDefaultNextStage 设置的）
+    // 这里通过检查版本列表是否已包含当前语言来避免重复加载
+    // 注意：用户手动切换语言时，会先清空版本列表，所以这里会触发加载
   }, [nextLanguageId]);
 
   // 下阶段：加载课程单元（当版本变化时）
@@ -159,12 +162,17 @@ function StudentReportContent() {
     }
   };
 
-  const loadNextVersions = async (languageId: string) => {
+  const loadNextVersions = async (languageId: string, targetVersionId?: string) => {
     try {
       const versionData = await getVersions(languageId);
       setNextVersions(versionData);
       if (versionData.length > 0) {
-        setNextVersionId(versionData[0].id);
+        // 如果指定了目标版本且存在于列表中，则使用目标版本
+        if (targetVersionId && versionData.some(v => v.id === targetVersionId)) {
+          setNextVersionId(targetVersionId);
+        } else {
+          setNextVersionId(versionData[0].id);
+        }
       } else {
         setNextVersionId('');
         setNextCourseUnits([]);
@@ -211,15 +219,34 @@ function StudentReportContent() {
     }
   };
 
+  // 设置下阶段默认值的函数
+  const setDefaultNextStage = async (languageId: string, versionId: string) => {
+    try {
+      // 加载版本列表
+      const versionData = await getVersions(languageId);
+      setNextVersions(versionData);
+      
+      // 如果目标版本存在于列表中，使用它
+      if (versionData.some(v => v.id === versionId)) {
+        setNextVersionId(versionId);
+      } else if (versionData.length > 0) {
+        setNextVersionId(versionData[0].id);
+      }
+      
+      // 设置语言ID
+      setNextLanguageId(languageId);
+    } catch (error) {
+      console.error('设置默认下阶段失败:', error);
+    }
+  };
+  
   // 当课程单元变化时，加载上次报告用于对比，并设置默认下阶段课程单元
   useEffect(() => {
     if (studentId && selectedCourseUnit) {
       loadPreviousReport();
       // 设置默认的下阶段选择器（同语言同版本）
-      // 只设置语言和版本，课程单元会在 nextCourseUnits 加载后自动设置
       if (language?.id && selectedVersionId) {
-        setNextLanguageId(language.id);
-        setNextVersionId(selectedVersionId);
+        setDefaultNextStage(language.id, selectedVersionId);
       }
     }
   }, [studentId, selectedCourseUnit?.id]);
@@ -671,8 +698,17 @@ function StudentReportContent() {
                     <select
                       value={nextLanguageId}
                       onChange={(e) => {
-                        setNextLanguageId(e.target.value);
+                        const newLangId = e.target.value;
+                        setNextLanguageId(newLangId);
+                        // 清空版本和课程，触发重新加载
+                        setNextVersions([]);
+                        setNextVersionId('');
+                        setNextCourseUnits([]);
                         setSelectedNextCourseUnit(null);
+                        // 手动加载新语言的版本
+                        if (newLangId) {
+                          loadNextVersions(newLangId);
+                        }
                       }}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                     >
