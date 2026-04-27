@@ -215,13 +215,70 @@ function StudentReportContent() {
   useEffect(() => {
     if (studentId && selectedCourseUnit) {
       loadPreviousReport();
-      // 设置默认的下阶段课程单元（本语言的下一个单元）
-      const defaultNextUnit = courseUnits.find(
-        c => c.period_number === selectedCourseUnit.period_number + 1
-      );
-      setSelectedNextCourseUnit(defaultNextUnit || null);
+      // 设置默认的下阶段选择器（同语言同版本）
+      // 只设置语言和版本，课程单元会在 nextCourseUnits 加载后自动设置
+      if (language?.id && selectedVersionId) {
+        setNextLanguageId(language.id);
+        setNextVersionId(selectedVersionId);
+      }
     }
   }, [studentId, selectedCourseUnit?.id]);
+  
+  // 当下阶段课程单元列表加载完成且 selectedNextCourseUnit 未设置时，自动选择下一个单元
+  useEffect(() => {
+    if (nextCourseUnits.length > 0 && selectedCourseUnit && !selectedNextCourseUnit) {
+      const defaultNextUnit = nextCourseUnits.find(
+        c => c.period_number === selectedCourseUnit.period_number + 1
+      );
+      if (defaultNextUnit) {
+        setSelectedNextCourseUnit(defaultNextUnit);
+      }
+    }
+  }, [nextCourseUnits, selectedCourseUnit?.id]);
+
+  // 当下阶段语言或版本变化时，加载对应的课程单元列表
+  useEffect(() => {
+    const loadNextCourseUnits = async () => {
+      if (!nextVersionId) {
+        setNextCourseUnits([]);
+        return;
+      }
+      try {
+        const units = await getCourseUnits({ versionId: nextVersionId });
+        setNextCourseUnits(units);
+        
+        // 如果当前选择的下阶段课程不在新列表中，尝试找到对应的课程
+        if (selectedNextCourseUnit && !units.some(u => u.id === selectedNextCourseUnit.id)) {
+          // 尝试找到同 period_number 的课程
+          const matchingUnit = units.find(u => u.period_number === selectedNextCourseUnit.period_number);
+          if (matchingUnit) {
+            setSelectedNextCourseUnit(matchingUnit);
+          }
+        }
+      } catch (error) {
+        console.error('加载下阶段课程单元失败:', error);
+        setNextCourseUnits([]);
+      }
+    };
+    loadNextCourseUnits();
+  }, [nextVersionId]);
+
+  // 当下阶段语言变化时，更新版本列表并默认选择第一个版本
+  useEffect(() => {
+    if (!nextLanguageId) {
+      setNextVersions([]);
+      setNextVersionId('');
+      return;
+    }
+    const langData = allLanguagesVersions.find(lv => lv.languageId === nextLanguageId);
+    if (langData && langData.versions.length > 0) {
+      setNextVersions(langData.versions);
+      // 只有当当前版本不属于该语言时才重置
+      if (!langData.versions.some(v => v.id === nextVersionId)) {
+        setNextVersionId(langData.versions[0].id);
+      }
+    }
+  }, [nextLanguageId, allLanguagesVersions]);
 
   const loadPreviousReport = async () => {
     if (!studentId || !selectedCourseUnit) return;
