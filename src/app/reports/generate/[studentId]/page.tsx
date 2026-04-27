@@ -270,22 +270,59 @@ function StudentReportContent() {
       }
       setLanguage(langData);
       
+      // 加载该语言的版本列表（用于本阶段课程选择）
+      const versionsForLang = await getVersions(classData.language_id);
+      setVersions(versionsForLang);
+      
+      // 如果 URL 有版本参数，设置为初始版本；否则使用班级默认版本
+      let initialVersionId = '';
+      if (versionIdParam) {
+        initialVersionId = versionIdParam;
+      } else if (classData.default_version_id) {
+        initialVersionId = classData.default_version_id;
+      } else if (versionsForLang.length > 0) {
+        initialVersionId = versionsForLang[0].id;
+      }
+      
+      // 立即加载课程单元
+      if (initialVersionId) {
+        const courseData = await getCourseUnits({ versionId: initialVersionId });
+        setCourseUnits(courseData);
+        setSelectedVersionId(initialVersionId);
+        
+        // 优先使用 URL 参数中的课程单元 ID
+        if (courseUnitIdParam && courseData.some(c => c.id === courseUnitIdParam)) {
+          const unit = courseData.find(c => c.id === courseUnitIdParam);
+          if (unit) {
+            setSelectedCourseUnit(unit);
+          }
+        }
+      }
+      
       // 加载所有语言及其版本数据（用于下阶段三级选择）
       const langVersions: {languageId: string; languageName: string; versions: CurriculumVersion[]}[] = [];
       for (const lang of languages) {
-        const versionsForLang = await getVersions(lang.id);
-        if (versionsForLang.length > 0) {
+        const versionsForLang2 = await getVersions(lang.id);
+        if (versionsForLang2.length > 0) {
           langVersions.push({
             languageId: lang.id,
             languageName: lang.name,
-            versions: versionsForLang
+            versions: versionsForLang2
           });
         }
       }
       setAllLanguagesVersions(langVersions);
       
-      // 初始化下阶段选择：默认选择第一个有课程的语言
-      if (langVersions.length > 0) {
+      // 初始化下阶段选择：默认选择语言（如果有版本参数则使用对应语言，否则用第一个）
+      if (versionIdParam) {
+        // 找到版本对应的语言
+        const targetLang = langVersions.find(lv => 
+          lv.versions.some(v => v.id === versionIdParam)
+        );
+        if (targetLang) {
+          setNextLanguageId(targetLang.languageId);
+        }
+      } else if (langVersions.length > 0) {
         setNextLanguageId(langVersions[0].languageId);
       }
       
