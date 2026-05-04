@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useCallback, useState, useEffect } from 'react';
-import { Loader2, X, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Loader2, X, Download, ZoomIn, ZoomOut, RotateCcw, Calendar } from 'lucide-react';
 import { domToPng } from 'modern-screenshot';
 
 interface RadarDimension {
@@ -221,6 +221,42 @@ export function PosterGenerator({ data, onClose }: PosterGeneratorProps) {
   const [generating, setGenerating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState(100); // 缩放比例
+  
+  // 日期选择状态：默认使用传入的日期或当前日期
+  const [selectedDate, setSelectedDate] = useState<string>(
+    data.generatedAt || new Date().toLocaleDateString('zh-CN')
+  );
+  
+  // 格式化日期为 YYYY-MM-DD 格式用于 input[type="date"]
+  const formatDateForInput = (dateStr: string) => {
+    // 尝试解析各种日期格式
+    const parts = dateStr.split(/[\/\-]/);
+    if (parts.length === 3) {
+      const year = parts[0].length === 4 ? parts[0] : parts[2];
+      const month = parts[0].length === 4 ? parts[1].padStart(2, '0') : parts[0].padStart(2, '0');
+      const day = parts[0].length === 4 ? parts[2].padStart(2, '0') : parts[1].padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    // 默认返回今天的日期
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+  
+  // 格式化日期为中文显示格式
+  const formatDateForDisplay = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('zh-CN');
+  };
+  
+  // 处理日期变化
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      setSelectedDate(formatDateForDisplay(value));
+      // 日期变化后清除预览，需要重新生成
+      setPreviewUrl(null);
+    }
+  };
 
   const generatePoster = useCallback(async () => {
     if (!posterRef.current) return;
@@ -322,7 +358,7 @@ export function PosterGenerator({ data, onClose }: PosterGeneratorProps) {
             {data.studentName}
           </div>
           <div style={{ fontSize: '14px', opacity: 0.9 }}>
-            日期：{data.generatedAt || new Date().toLocaleDateString('zh-CN')}
+            日期：{selectedDate}
           </div>
         </div>
       </div>
@@ -662,6 +698,18 @@ export function PosterGenerator({ data, onClose }: PosterGeneratorProps) {
                 </button>
               </div>
             )}
+            
+            {/* 日期选择器 */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+              <Calendar className="w-4 h-4 text-gray-600" />
+              <label className="text-sm text-gray-600 whitespace-nowrap">报告日期</label>
+              <input
+                type="date"
+                value={formatDateForInput(selectedDate)}
+                onChange={handleDateChange}
+                className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
             
             {!previewUrl ? (
               <button
