@@ -83,6 +83,9 @@ export default function CoursesPage() {
     }
   }, []);
 
+  // 使用 ref 跟踪用户是否正在手动选择版本
+  const [userSelectingVersion, setUserSelectingVersion] = useState(false);
+
   // 加载版本列表
   const loadVersions = useCallback(async (forceSelect = false) => {
     if (!selectedLanguage) {
@@ -93,15 +96,22 @@ export default function CoursesPage() {
     try {
       const versionData = await getVersions(selectedLanguage);
       setVersions(versionData);
-      // 仅在强制选择或当前没有选中版本时，自动选择默认版本
-      if (forceSelect || !selectedVersion || !versionData.find(v => v.id === selectedVersion)) {
+      // 仅在强制选择时自动选择默认版本
+      if (forceSelect) {
         const defaultVersion = versionData.find(v => v.is_default) || versionData[0];
         setSelectedVersion(defaultVersion?.id || '');
+        setUserSelectingVersion(false);
       }
     } catch (error) {
       console.error('加载版本失败:', error);
     }
-  }, [selectedLanguage, selectedVersion]);
+  }, [selectedLanguage]);
+
+  // 用户手动选择版本
+  const handleVersionChange = (versionId: string) => {
+    setUserSelectingVersion(true);
+    setSelectedVersion(versionId);
+  };
 
   // 加载课程单元
   const loadCourses = useCallback(async () => {
@@ -218,7 +228,12 @@ export default function CoursesPage() {
     if (!confirm('确定要删除该版本吗？该版本下的所有课程单元也会被删除。')) return;
     try {
       await deleteVersion(versionId);
-      await loadVersions();
+      // 如果删除的是当前选中的版本，需要重新选择
+      if (selectedVersion === versionId) {
+        await loadVersions(true);
+      } else {
+        await loadVersions();
+      }
     } catch (error) {
       console.error('删除版本失败:', error);
       alert('删除失败，请重试');
@@ -387,7 +402,7 @@ export default function CoursesPage() {
               <div className="relative">
                 <select
                   value={selectedVersion}
-                  onChange={(e) => setSelectedVersion(e.target.value)}
+                  onChange={(e) => handleVersionChange(e.target.value)}
                   disabled={!selectedLanguage || versions.length === 0}
                   className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
