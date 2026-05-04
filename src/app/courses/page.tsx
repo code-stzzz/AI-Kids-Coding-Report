@@ -84,7 +84,7 @@ export default function CoursesPage() {
   }, []);
 
   // 加载版本列表
-  const loadVersions = useCallback(async () => {
+  const loadVersions = useCallback(async (forceSelect = false) => {
     if (!selectedLanguage) {
       setVersions([]);
       setSelectedVersion('');
@@ -93,13 +93,15 @@ export default function CoursesPage() {
     try {
       const versionData = await getVersions(selectedLanguage);
       setVersions(versionData);
-      // 自动选择默认版本或第一个版本
-      const defaultVersion = versionData.find(v => v.is_default) || versionData[0];
-      setSelectedVersion(defaultVersion?.id || '');
+      // 仅在强制选择或当前没有选中版本时，自动选择默认版本
+      if (forceSelect || !selectedVersion || !versionData.find(v => v.id === selectedVersion)) {
+        const defaultVersion = versionData.find(v => v.is_default) || versionData[0];
+        setSelectedVersion(defaultVersion?.id || '');
+      }
     } catch (error) {
       console.error('加载版本失败:', error);
     }
-  }, [selectedLanguage]);
+  }, [selectedLanguage, selectedVersion]);
 
   // 加载课程单元
   const loadCourses = useCallback(async () => {
@@ -133,19 +135,21 @@ export default function CoursesPage() {
     init();
   }, []);
 
-  // 语言切换时重新加载版本
+  // 语言切换时重新加载版本（强制选择默认版本）
   useEffect(() => {
     if (selectedLanguage) {
-      loadVersions();
+      loadVersions(true);
     }
-  }, [selectedLanguage, loadVersions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLanguage]);
 
   // 版本切换时重新加载课程
   useEffect(() => {
     if (selectedVersion) {
       loadCourses();
     }
-  }, [selectedVersion, loadCourses]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVersion]);
 
   // 版本操作
   const openAddVersion = () => {
