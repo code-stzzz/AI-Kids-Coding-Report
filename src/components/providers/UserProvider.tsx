@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useRef, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { setSupabaseClient } from '@/lib/data-api';
@@ -26,39 +26,49 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(false);
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+  const mountedRef = useRef(true);
 
   // 初始化 Supabase 客户端
   useEffect(() => {
+    mountedRef.current = true;
+    
     const initSupabase = async () => {
       try {
         // 从 API 获取配置
         const response = await fetch('/api/config');
         if (!response.ok) {
-          setLoading(false);
+          if (mountedRef.current) setLoading(false);
           return;
         }
         
         const config = await response.json();
         if (!config.supabaseUrl || !config.supabaseKey) {
-          setLoading(false);
+          if (mountedRef.current) setLoading(false);
           return;
         }
 
         const client = createBrowserClient(config.supabaseUrl, config.supabaseKey);
+        
+        if (!mountedRef.current) return;
+        
         setSupabase(client);
         setConfigured(true);
         // 注册到 data-api 供 API 调用使用
         setSupabaseClient(client.auth);
       } catch (error) {
         console.error('初始化 Supabase 失败:', error);
-        setLoading(false);
+        if (mountedRef.current) setLoading(false);
       }
     };
 
     initSupabase();
+    
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     if (!supabase) {
       setLoading(false);
       return;
@@ -66,6 +76,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (!mountedRef.current) return;
       
       if (authUser) {
         setUser({
@@ -77,12 +89,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setUser(null);
       }
     } catch (error) {
+      // 忽略中止错误
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
       console.error('获取用户信息失败:', error);
-      setUser(null);
+      if (mountedRef.current) setUser(null);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     if (!supabase) {
@@ -93,17 +109,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      refreshUser();
+      if (mountedRef.current) {
+        refreshUser();
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, refreshUser]);
 
   const signOut = async () => {
     if (supabase) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // 忽略中止错误
+      }
     }
     setUser(null);
     window.location.href = '/auth';
