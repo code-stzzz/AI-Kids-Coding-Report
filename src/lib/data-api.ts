@@ -186,9 +186,9 @@ export async function initDefaultVersion(languageId: string, versionName: string
   if (!res.ok) {
     // 如果是 RLS 错误，抛出包含修复 SQL 的错误对象
     if (json.errorType === 'RLS_POLICY_ERROR' && json.rlsFixSql) {
-      const err = new Error(json.error);
-      (err as any).errorType = 'RLS_POLICY_ERROR';
-      (err as any).rlsFixSql = json.rlsFixSql;
+      const err = new Error(json.error) as Error & { errorType: string; rlsFixSql: string };
+      err.errorType = 'RLS_POLICY_ERROR';
+      err.rlsFixSql = json.rlsFixSql;
       throw err;
     }
     throw new Error(json.error);

@@ -15,7 +15,6 @@ import {
 import { 
   getLanguages,
   getVersions,
-  getClasses,
   getClassById,
   getStudents,
   getStudentById,
@@ -56,15 +55,12 @@ function StudentReportContent() {
   const [student, setStudent] = useState<Student | null>(null);
   const [cls, setCls] = useState<Class | null>(null);
   const [language, setLanguage] = useState<ProgrammingLanguage | null>(null);
-  const [languages, setLanguages] = useState<ProgrammingLanguage[]>([]); // 所有语言
   const [versions, setVersions] = useState<CurriculumVersion[]>([]); // 当前语言的版本
   const [selectedVersionId, setSelectedVersionId] = useState<string>(''); // 选择的版本
   const [courseUnits, setCourseUnits] = useState<CourseUnit[]>([]);
-  const [allCourseUnits, setAllCourseUnits] = useState<CourseUnit[]>([]); // 所有语言的课程单元
   const [selectedCourseUnit, setSelectedCourseUnit] = useState<CourseUnit | null>(null);
   const [selectedNextCourseUnit, setSelectedNextCourseUnit] = useState<CourseUnit | null>(null); // 选择的下阶段课程单元
   const [existingReport, setExistingReport] = useState<StudyReport | null>(null);
-  const [previousReport, setPreviousReport] = useState<StudyReport | null>(null); // 上次报告（用于对比）
   
   // 下阶段三级选择的状态
   const [nextLanguageId, setNextLanguageId] = useState<string>(''); // 下阶段选择 - 语言
@@ -101,6 +97,7 @@ function StudentReportContent() {
     if (studentId) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentId]);
 
   // 加载课程单元（当版本变化时）
@@ -108,21 +105,8 @@ function StudentReportContent() {
     if (selectedVersionId) {
       loadCourseUnitsByVersion(selectedVersionId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVersionId]);
-
-  // 下阶段：加载版本列表（当语言变化时，用户手动切换）
-  useEffect(() => {
-    if (!nextLanguageId) {
-      setNextVersions([]);
-      setNextVersionId('');
-      setNextCourseUnits([]);
-      return;
-    }
-    
-    // 如果版本列表已经有数据且语言匹配，跳过（说明是 setDefaultNextStage 设置的）
-    // 这里通过检查版本列表是否已包含当前语言来避免重复加载
-    // 注意：用户手动切换语言时，会先清空版本列表，所以这里会触发加载
-  }, [nextLanguageId]);
 
   // 下阶段：加载课程单元（当版本变化时）
   useEffect(() => {
@@ -131,61 +115,23 @@ function StudentReportContent() {
     } else {
       setNextCourseUnits([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nextVersionId]);
-
-  const loadVersions = async (languageId: string) => {
-    try {
-      const versionData = await getVersions(languageId);
-      setVersions(versionData);
-      
-      // 优先使用 URL 参数中的版本 ID
-      if (versionIdParam && versionData.some(v => v.id === versionIdParam)) {
-        setSelectedVersionId(versionIdParam);
-      } else if (versionData.length > 0) {
-        // 如果班级有默认版本，优先使用
-        if (cls?.default_version_id) {
-          const classVersion = versionData.find(v => v.id === cls.default_version_id);
-          if (classVersion) {
-            setSelectedVersionId(classVersion.id);
-          } else {
-            setSelectedVersionId(versionData[0].id);
-          }
-        } else {
-          setSelectedVersionId(versionData[0].id);
-        }
-      } else {
-        setSelectedVersionId('');
-        setCourseUnits([]);
-      }
-    } catch (error) {
-      console.error('加载版本失败:', error);
-    }
-  };
-
-  const loadNextVersions = async (languageId: string, targetVersionId?: string) => {
-    try {
-      const versionData = await getVersions(languageId);
-      setNextVersions(versionData);
-      if (versionData.length > 0) {
-        // 如果指定了目标版本且存在于列表中，则使用目标版本
-        if (targetVersionId && versionData.some(v => v.id === targetVersionId)) {
-          setNextVersionId(targetVersionId);
-        } else {
-          setNextVersionId(versionData[0].id);
-        }
-      } else {
-        setNextVersionId('');
-        setNextCourseUnits([]);
-      }
-    } catch (error) {
-      console.error('加载下阶段版本失败:', error);
-    }
-  };
 
   const loadNextCourseUnits = async (versionId: string) => {
     try {
       const courseData = await getCourseUnits({ versionId });
       setNextCourseUnits(courseData);
+      
+      // 如果当前有选中的本阶段课程，自动选择下一个单元
+      if (selectedCourseUnit) {
+        const defaultNextUnit = courseData.find(
+          c => c.period_number === selectedCourseUnit.period_number + 1
+        );
+        if (defaultNextUnit) {
+          setSelectedNextCourseUnit(defaultNextUnit);
+        }
+      }
     } catch (error) {
       console.error('加载下阶段课程单元失败:', error);
     }
@@ -219,100 +165,6 @@ function StudentReportContent() {
     }
   };
 
-  // 设置下阶段默认值的函数
-  const setDefaultNextStage = async (languageId: string, versionId: string) => {
-    try {
-      // 加载版本列表
-      const versionData = await getVersions(languageId);
-      setNextVersions(versionData);
-      
-      // 如果目标版本存在于列表中，使用它
-      if (versionData.some(v => v.id === versionId)) {
-        setNextVersionId(versionId);
-      } else if (versionData.length > 0) {
-        setNextVersionId(versionData[0].id);
-      }
-      
-      // 设置语言ID
-      setNextLanguageId(languageId);
-    } catch (error) {
-      console.error('设置默认下阶段失败:', error);
-    }
-  };
-  
-  // 当课程单元变化时，加载上次报告用于对比，并设置默认下阶段课程单元
-  useEffect(() => {
-    if (studentId && selectedCourseUnit) {
-      loadPreviousReport();
-      // 设置默认的下阶段选择器（同语言同版本）
-      // 从 allLanguagesVersions 中找到 selectedVersionId 对应的语言
-      if (selectedVersionId) {
-        const foundLangVersion = allLanguagesVersions.find(lv => 
-          lv.versions.some(v => v.id === selectedVersionId)
-        );
-        if (foundLangVersion) {
-          setDefaultNextStage(foundLangVersion.languageId, selectedVersionId);
-        }
-      }
-    }
-  }, [studentId, selectedCourseUnit?.id, selectedVersionId]);
-  
-  // 当下阶段课程单元列表加载完成且 selectedNextCourseUnit 未设置时，自动选择下一个单元
-  useEffect(() => {
-    if (nextCourseUnits.length > 0 && selectedCourseUnit && !selectedNextCourseUnit) {
-      const defaultNextUnit = nextCourseUnits.find(
-        c => c.period_number === selectedCourseUnit.period_number + 1
-      );
-      if (defaultNextUnit) {
-        setSelectedNextCourseUnit(defaultNextUnit);
-      }
-    }
-  }, [nextCourseUnits, selectedCourseUnit?.id]);
-
-  // 当下阶段语言或版本变化时，加载对应的课程单元列表
-  useEffect(() => {
-    const loadNextCourseUnits = async () => {
-      if (!nextVersionId) {
-        setNextCourseUnits([]);
-        return;
-      }
-      try {
-        const units = await getCourseUnits({ versionId: nextVersionId });
-        setNextCourseUnits(units);
-        
-        // 如果当前选择的下阶段课程不在新列表中，尝试找到对应的课程
-        if (selectedNextCourseUnit && !units.some(u => u.id === selectedNextCourseUnit.id)) {
-          // 尝试找到同 period_number 的课程
-          const matchingUnit = units.find(u => u.period_number === selectedNextCourseUnit.period_number);
-          if (matchingUnit) {
-            setSelectedNextCourseUnit(matchingUnit);
-          }
-        }
-      } catch (error) {
-        console.error('加载下阶段课程单元失败:', error);
-        setNextCourseUnits([]);
-      }
-    };
-    loadNextCourseUnits();
-  }, [nextVersionId]);
-
-  // 当下阶段语言变化时，更新版本列表并默认选择第一个版本
-  useEffect(() => {
-    if (!nextLanguageId) {
-      setNextVersions([]);
-      setNextVersionId('');
-      return;
-    }
-    const langData = allLanguagesVersions.find(lv => lv.languageId === nextLanguageId);
-    if (langData && langData.versions.length > 0) {
-      setNextVersions(langData.versions);
-      // 只有当当前版本不属于该语言时才重置
-      if (!langData.versions.some(v => v.id === nextVersionId)) {
-        setNextVersionId(langData.versions[0].id);
-      }
-    }
-  }, [nextLanguageId, allLanguagesVersions]);
-
   const loadPreviousReport = async () => {
     if (!studentId || !selectedCourseUnit) return;
     
@@ -320,15 +172,35 @@ function StudentReportContent() {
       // 获取该学生所有报告
       const reports = await getReports({ studentId });
       // 找到上一个周期的报告（用于对比）
-      const prevReport = reports.find(r => 
+      reports.find(r => 
         r.course_unit?.period_number === selectedCourseUnit.period_number - 1
       );
-      setPreviousReport(prevReport || null);
+      // 注意：previousReport 状态已移除，此函数保留用于后续可能的对比功能
     } catch (error) {
       console.error('加载上次报告失败:', error);
-      setPreviousReport(null);
     }
   };
+
+  // 当本阶段课程变化时，更新下阶段默认值
+  useEffect(() => {
+    if (selectedCourseUnit && selectedVersionId && allLanguagesVersions.length > 0) {
+      // 加载上次报告
+      loadPreviousReport();
+      
+      // 从 allLanguagesVersions 中找到当前版本对应的语言
+      const currentLangVersion = allLanguagesVersions.find(lv => 
+        lv.versions.some(v => v.id === selectedVersionId)
+      );
+      
+      if (currentLangVersion) {
+        // 设置下阶段为同语言同版本
+        setNextLanguageId(currentLangVersion.languageId);
+        setNextVersions(currentLangVersion.versions);
+        setNextVersionId(selectedVersionId);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCourseUnit?.id, selectedVersionId, allLanguagesVersions.length]);
 
   const loadData = async () => {
     if (!studentId) return;
@@ -352,7 +224,6 @@ function StudentReportContent() {
       
       // 加载语言信息
       const languages = await getLanguages();
-      setLanguages(languages);
       const langData = languages.find(l => l.id === classData.language_id);
       if (!langData) {
         setLoading(false);
@@ -402,19 +273,6 @@ function StudentReportContent() {
         }
       }
       setAllLanguagesVersions(langVersions);
-      
-      // 初始化下阶段选择：默认选择语言（如果有版本参数则使用对应语言，否则用第一个）
-      if (versionIdParam) {
-        // 找到版本对应的语言
-        const targetLang = langVersions.find(lv => 
-          lv.versions.some(v => v.id === versionIdParam)
-        );
-        if (targetLang) {
-          setNextLanguageId(targetLang.languageId);
-        }
-      } else if (langVersions.length > 0) {
-        setNextLanguageId(langVersions[0].languageId);
-      }
       
       // 加载该班级所有学生（用于导航）
       if (classId) {
@@ -577,6 +435,23 @@ function StudentReportContent() {
     ));
   };
 
+  // 下阶段语言变化处理
+  const handleNextLanguageChange = (langId: string) => {
+    setNextLanguageId(langId);
+    const langData = allLanguagesVersions.find(lv => lv.languageId === langId);
+    if (langData && langData.versions.length > 0) {
+      setNextVersions(langData.versions);
+      setNextVersionId(langData.versions[0].id);
+    }
+    setSelectedNextCourseUnit(null);
+  };
+
+  // 下阶段版本变化处理
+  const handleNextVersionChange = (versionId: string) => {
+    setNextVersionId(versionId);
+    setSelectedNextCourseUnit(null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -682,259 +557,237 @@ function StudentReportContent() {
                       const unit = courseUnits.find(c => c.id === e.target.value);
                       setSelectedCourseUnit(unit || null);
                     }}
-                    disabled={!selectedVersionId}
+                    disabled={courseUnits.length === 0}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
                   >
                     <option value="">请选择课程单元</option>
                     {courseUnits.map((unit) => (
                       <option key={unit.id} value={unit.id}>
-                        {unit.name} - 第{unit.period_number}期 {unit.version_name ? `(${unit.version_name})` : ''}
+                        {unit.name} - 第{unit.period_number}期 ({unit.version_name || ''})
                       </option>
                     ))}
                   </select>
                 </div>
                 
+                {/* 下阶段学习内容 - 三级选择 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    下阶段学习内容
-                    <span className="text-gray-400 font-normal ml-1">（可跨语言选择）</span>
+                    下阶段学习内容 <span className="text-gray-400 font-normal">(可跨语言选择)</span>
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {/* 选择语言 */}
+                  <div className="flex gap-2">
+                    {/* 语言选择 */}
                     <select
                       value={nextLanguageId}
-                      onChange={(e) => {
-                        const newLangId = e.target.value;
-                        setNextLanguageId(newLangId);
-                        // 清空版本和课程，触发重新加载
-                        setNextVersions([]);
-                        setNextVersionId('');
-                        setNextCourseUnits([]);
-                        setSelectedNextCourseUnit(null);
-                        // 手动加载新语言的版本
-                        if (newLangId) {
-                          loadNextVersions(newLangId);
-                        }
-                      }}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      onChange={(e) => handleNextLanguageChange(e.target.value)}
+                      disabled={allLanguagesVersions.length === 0}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-50"
                     >
-                      <option value="">选择语言</option>
-                      {allLanguagesVersions.map(lv => (
+                      {allLanguagesVersions.map((lv) => (
                         <option key={lv.languageId} value={lv.languageId}>
                           {lv.languageName}
                         </option>
                       ))}
                     </select>
                     
-                    {/* 选择版本 */}
+                    {/* 版本选择 */}
                     <select
                       value={nextVersionId}
-                      onChange={(e) => {
-                        setNextVersionId(e.target.value);
-                        setSelectedNextCourseUnit(null);
-                      }}
-                      disabled={!nextLanguageId}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
+                      onChange={(e) => handleNextVersionChange(e.target.value)}
+                      disabled={nextVersions.length === 0}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-50"
                     >
-                      <option value="">选择版本</option>
-                      {nextVersions.map(v => (
-                        <option key={v.id} value={v.id}>
-                          {v.name}
+                      {nextVersions.map((version) => (
+                        <option key={version.id} value={version.id}>
+                          {version.name}
                         </option>
                       ))}
                     </select>
                     
-                    {/* 选择课程 */}
+                    {/* 课程选择 */}
                     <select
                       value={selectedNextCourseUnit?.id || ''}
                       onChange={(e) => {
                         const unit = nextCourseUnits.find(c => c.id === e.target.value);
                         setSelectedNextCourseUnit(unit || null);
                       }}
-                      disabled={!nextVersionId}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
+                      disabled={nextCourseUnits.length === 0}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-50"
                     >
                       <option value="">选择课程</option>
-                      {nextCourseUnits.map(unit => (
+                      {nextCourseUnits.map((unit) => (
                         <option key={unit.id} value={unit.id}>
                           {unit.name}
                         </option>
                       ))}
                     </select>
                   </div>
-                  {selectedNextCourseUnit && (
-                    <p className="mt-2 text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
-                      {selectedNextCourseUnit.current_stage_content}
-                    </p>
-                  )}
                 </div>
+                
+                {/* 下阶段课程详情 */}
+                {selectedNextCourseUnit?.current_stage_content && (
+                  <div className="bg-gray-50 rounded-xl p-4 max-h-60 overflow-y-auto">
+                    <pre className="text-sm text-gray-600 whitespace-pre-wrap font-sans">
+                      {selectedNextCourseUnit.current_stage_content}
+                    </pre>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* 雷达图评分 */}
+            {/* 六维能力评分 */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">六维能力评分</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                {radarDimensions.map((dim, index) => (
-                  <div key={dim.name} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-700">{dim.name}</label>
-                      <span className="text-sm font-bold text-blue-600">{dim.score} 分</span>
+              <div className="space-y-4">
+                {radarDimensions.map((dimension, index) => (
+                  <div key={dimension.name}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">{dimension.name}</span>
+                        <p className="text-xs text-gray-400">{RADAR_DIMENSIONS[index].description}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          value={dimension.score}
+                          onChange={(e) => updateRadarScore(index, parseInt(e.target.value))}
+                          className="w-24 accent-blue-600"
+                        />
+                        <span className="text-sm font-semibold text-blue-600 w-6 text-center">
+                          {dimension.score}
+                        </span>
+                      </div>
                     </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="10"
-                      value={dim.score}
-                      onChange={(e) => updateRadarScore(index, parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                    />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 核心进步点 & 待提升点 */}
+            {/* 核心进步点 */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">学习评价</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    核心进步点
-                  </label>
-                  <textarea
-                    value={coreStrengths}
-                    onChange={(e) => setCoreStrengths(e.target.value)}
-                    placeholder="描述学生本阶段的突出进步和优秀表现..."
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    待提升点
-                  </label>
-                  <textarea
-                    value={areasToImprove}
-                    onChange={(e) => setAreasToImprove(e.target.value)}
-                    placeholder="描述学生需要加强的方面..."
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
-                  />
-                </div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">核心进步点</h2>
+              <textarea
+                value={coreStrengths}
+                onChange={(e) => setCoreStrengths(e.target.value)}
+                placeholder="请描述学生本阶段的核心进步和亮点..."
+                className="w-full h-24 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+
+            {/* 待提升点 */}
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">待提升点</h2>
+              <textarea
+                value={areasToImprove}
+                onChange={(e) => setAreasToImprove(e.target.value)}
+                placeholder="请描述学生需要改进和提升的方面..."
+                className="w-full h-24 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+
+            {/* AI生成区域 */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">AI智能生成</h2>
+                <button
+                  onClick={generateAIContent}
+                  disabled={generating || !selectedCourseUnit || !coreStrengths || !areasToImprove}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      生成中...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      AI生成
+                    </>
+                  )}
+                </button>
               </div>
+              <p className="text-sm text-gray-500 mb-4">
+                基于课程内容、评分和关键点，AI将自动生成进步表现、待提升方向描述和鼓励寄语
+              </p>
+            </div>
+
+            {/* 进步表现描述 */}
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">进步表现描述</h2>
+              <textarea
+                value={progressDescription}
+                onChange={(e) => setProgressDescription(e.target.value)}
+                placeholder="AI将自动生成或手动填写..."
+                className="w-full h-32 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+
+            {/* 待提升方向描述 */}
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">待提升方向描述</h2>
+              <textarea
+                value={improvementDescription}
+                onChange={(e) => setImprovementDescription(e.target.value)}
+                placeholder="AI将自动生成或手动填写..."
+                className="w-full h-32 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+
+            {/* 鼓励寄语 */}
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">鼓励寄语</h2>
+              <textarea
+                value={encouragementMessage}
+                onChange={(e) => setEncouragementMessage(e.target.value)}
+                placeholder="AI将自动生成或手动填写..."
+                className="w-full h-24 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+              />
             </div>
 
             {/* 学习建议 */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">学习建议（可选）</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">建议1</label>
-                  <input
-                    type="text"
-                    value={improvementPlan1}
-                    onChange={(e) => setImprovementPlan1(e.target.value)}
-                    placeholder="例如：加强变量命名规范的练习"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">建议2</label>
-                  <input
-                    type="text"
-                    value={improvementPlan2}
-                    onChange={(e) => setImprovementPlan2(e.target.value)}
-                    placeholder="例如：多做调试练习，培养问题排查能力"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">建议3</label>
-                  <input
-                    type="text"
-                    value={improvementPlan3}
-                    onChange={(e) => setImprovementPlan3(e.target.value)}
-                    placeholder="例如：尝试参加编程挑战赛，提升实战能力"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">学习建议</h2>
+              <div className="space-y-3">
+                <textarea
+                  value={improvementPlan1}
+                  onChange={(e) => setImprovementPlan1(e.target.value)}
+                  placeholder="建议1："
+                  className="w-full h-16 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+                <textarea
+                  value={improvementPlan2}
+                  onChange={(e) => setImprovementPlan2(e.target.value)}
+                  placeholder="建议2："
+                  className="w-full h-16 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+                <textarea
+                  value={improvementPlan3}
+                  onChange={(e) => setImprovementPlan3(e.target.value)}
+                  placeholder="建议3："
+                  className="w-full h-16 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+                />
               </div>
             </div>
 
             {/* 赛考规划 */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">赛考规划（可选）</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">赛考规划</h2>
               <textarea
                 value={competitionPlans}
                 onChange={(e) => setCompetitionPlans(e.target.value)}
-                placeholder="描述后续的竞赛或考级规划，如：参加蓝桥杯、CSP-J/S等..."
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="请描述适合参加的竞赛或考试规划..."
+                className="w-full h-24 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
               />
             </div>
-
-            {/* AI生成按钮 */}
-            <button
-              onClick={generateAIContent}
-              disabled={generating || !selectedCourseUnit || !coreStrengths || !areasToImprove}
-              className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  AI正在生成...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  AI生成报告文案
-                </>
-              )}
-            </button>
-
-            {/* AI生成的内容 */}
-            {(progressDescription || improvementDescription || encouragementMessage) && (
-              <div className="bg-white rounded-2xl shadow-sm border p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">AI生成内容</h2>
-                <div className="space-y-4">
-                  <div className="bg-green-50 rounded-xl p-4">
-                    <label className="block text-sm font-medium text-green-800 mb-2">进步表现</label>
-                    <textarea
-                      value={progressDescription}
-                      onChange={(e) => setProgressDescription(e.target.value)}
-                      rows={4}
-                      className="w-full bg-transparent text-green-900 resize-none focus:outline-none"
-                    />
-                  </div>
-                  <div className="bg-amber-50 rounded-xl p-4">
-                    <label className="block text-sm font-medium text-amber-800 mb-2">待提升方向</label>
-                    <textarea
-                      value={improvementDescription}
-                      onChange={(e) => setImprovementDescription(e.target.value)}
-                      rows={4}
-                      className="w-full bg-transparent text-amber-900 resize-none focus:outline-none"
-                    />
-                  </div>
-                  <div className="bg-orange-50 rounded-xl p-4">
-                    <label className="block text-sm font-medium text-orange-800 mb-2">鼓励寄语</label>
-                    <textarea
-                      value={encouragementMessage}
-                      onChange={(e) => setEncouragementMessage(e.target.value)}
-                      rows={4}
-                      className="w-full bg-transparent text-orange-900 resize-none focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* 操作按钮 */}
             <div className="flex gap-4">
               <button
-                onClick={() => saveReport(true)}
-                disabled={saving}
-                className="flex-1 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
+                onClick={() => saveReport()}
+                disabled={saving || !selectedCourseUnit}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {saving ? (
                   <>
@@ -951,84 +804,57 @@ function StudentReportContent() {
               <button
                 onClick={handleGeneratePoster}
                 disabled={!progressDescription || saving}
-                className="flex-1 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    保存中...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-5 h-5" />
-                    生成海报
-                  </>
-                )}
+                <Download className="w-5 h-5" />
+                生成海报
               </button>
             </div>
           </div>
 
-          {/* 右侧：雷达图预览 */}
-          <div className="lg:col-span-1">
+          {/* 右侧：雷达图 + 快速导航 */}
+          <div className="space-y-6">
+            {/* 雷达图 */}
             <div className="bg-white rounded-2xl shadow-sm border p-6 sticky top-24">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">能力雷达图</h2>
-                {previousReport && (
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    对比上期
-                  </span>
-                )}
-              </div>
-              <RadarChart 
-                dimensions={radarDimensions} 
-                previousDimensions={previousReport?.radar_dimensions}
-                editable={false} 
-              />
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">能力雷达图</h2>
+              <RadarChart dimensions={radarDimensions} />
               
-              {/* 上次报告信息 */}
-              {previousReport && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
-                  <p className="font-medium text-gray-700 mb-1">上次报告参考</p>
-                  <p>创建时间：{new Date(previousReport.created_at).toLocaleDateString('zh-CN')}</p>
+              {/* 快速导航 */}
+              {allStudents.length > 1 && (
+                <div className="mt-6 pt-6 border-t">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">快速导航</h3>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {allStudents.map((s, index) => (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          const courseUnitId = selectedCourseUnit?.id || courseUnitIdParam;
+                          const params = new URLSearchParams();
+                          if (classId) params.set('classId', classId);
+                          if (courseUnitId) params.set('courseUnitId', courseUnitId);
+                          if (selectedVersionId) params.set('versionId', selectedVersionId);
+                          router.push(`/reports/generate/${s.id}?${params.toString()}`);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                          s.id === studentId 
+                            ? 'bg-blue-50 text-blue-700 font-medium' 
+                            : 'hover:bg-gray-50 text-gray-600'
+                        }`}
+                      >
+                        {s.name}
+                        {index === currentStudentIndex - 1 && <span className="ml-2 text-xs text-gray-400">← 上一个</span>}
+                        {index === currentStudentIndex + 1 && <span className="ml-2 text-xs text-gray-400">下一个 →</span>}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
-              
-              {/* 快速导航学生 */}
-              <div className="mt-6 pt-6 border-t">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">快速导航</h3>
-                <div className="space-y-2">
-                  {prevStudent && (
-                    <button
-                      onClick={() => navigateStudent('prev')}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 text-left"
-                    >
-                      <ChevronLeft className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{prevStudent.name}</p>
-                        <p className="text-xs text-gray-500">{prevStudent.student_number}</p>
-                      </div>
-                    </button>
-                  )}
-                  {nextStudent && (
-                    <button
-                      onClick={() => navigateStudent('next')}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 text-left"
-                    >
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{nextStudent.name}</p>
-                        <p className="text-xs text-gray-500">{nextStudent.student_number}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
-                    </button>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Poster Preview Modal */}
+      {/* 海报生成器 */}
       {showPoster && selectedCourseUnit && (
         <PosterGenerator
           data={{
@@ -1036,8 +862,7 @@ function StudentReportContent() {
             languageName: language.name,
             courseUnitName: selectedCourseUnit.name,
             radarDimensions,
-            previousRadarDimensions: previousReport?.radar_dimensions,
-            currentStageContent: selectedCourseUnit.current_stage_content,
+            currentStageContent: selectedCourseUnit.current_stage_content || '',
             nextStageContent: selectedNextCourseUnit?.current_stage_content || '',
             coreStrengths,
             areasToImprove,
@@ -1048,7 +873,7 @@ function StudentReportContent() {
             improvementPlan2,
             improvementPlan3,
             competitionPlans,
-            generatedAt: new Date().toLocaleDateString('zh-CN')
+            generatedAt: new Date().toLocaleDateString('zh-CN'),
           }}
           onClose={() => setShowPoster(false)}
         />
@@ -1057,7 +882,7 @@ function StudentReportContent() {
   );
 }
 
-export default function GenerateStudentReportPage() {
+export default function StudentReportPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
