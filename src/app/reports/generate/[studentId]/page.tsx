@@ -245,11 +245,17 @@ function StudentReportContent() {
     if (studentId && selectedCourseUnit) {
       loadPreviousReport();
       // 设置默认的下阶段选择器（同语言同版本）
-      if (language?.id && selectedVersionId) {
-        setDefaultNextStage(language.id, selectedVersionId);
+      // 从 allLanguagesVersions 中找到 selectedVersionId 对应的语言
+      if (selectedVersionId) {
+        const foundLangVersion = allLanguagesVersions.find(lv => 
+          lv.versions.some(v => v.id === selectedVersionId)
+        );
+        if (foundLangVersion) {
+          setDefaultNextStage(foundLangVersion.languageId, selectedVersionId);
+        }
       }
     }
-  }, [studentId, selectedCourseUnit?.id]);
+  }, [studentId, selectedCourseUnit?.id, selectedVersionId]);
   
   // 当下阶段课程单元列表加载完成且 selectedNextCourseUnit 未设置时，自动选择下一个单元
   useEffect(() => {
