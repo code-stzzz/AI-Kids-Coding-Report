@@ -18,8 +18,43 @@ export async function GET(request: NextRequest) {
       .order('period_number');
 
     if (versionId) {
-      // 按版本查询
-      query = query.eq('version_id', versionId);
+      // 按版本查询 - 同时查找同名版本共享的课程单元
+      // 使用 service role key 获取版本名称
+      const serviceRoleKey = getSupabaseServiceRoleKey();
+      const { url } = getSupabaseCredentials();
+      
+      if (serviceRoleKey) {
+        const adminClient = createClient(url, serviceRoleKey, {
+          auth: { autoRefreshToken: false, persistSession: false }
+        });
+        
+        // 获取当前版本信息
+        const { data: currentVersion } = await adminClient
+          .from('curriculum_versions')
+          .select('name, language_id')
+          .eq('id', versionId)
+          .single();
+        
+        if (currentVersion) {
+          // 查找所有同名版本的 ID
+          const { data: sameNameVersions } = await adminClient
+            .from('curriculum_versions')
+            .select('id')
+            .eq('name', currentVersion.name)
+            .eq('language_id', currentVersion.language_id);
+          
+          if (sameNameVersions && sameNameVersions.length > 0) {
+            const versionIds = sameNameVersions.map(v => v.id);
+            query = query.in('version_id', versionIds);
+          } else {
+            query = query.eq('version_id', versionId);
+          }
+        } else {
+          query = query.eq('version_id', versionId);
+        }
+      } else {
+        query = query.eq('version_id', versionId);
+      }
     } else if (languageId) {
       // 按语言查询（查询该语言下所有版本的课程单元）
       query = query.eq('language_id', languageId);
