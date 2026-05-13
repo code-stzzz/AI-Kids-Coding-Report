@@ -263,37 +263,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: '缺少版本 ID' }, { status: 400 });
     }
 
-    // 获取当前版本信息
-    const { data: currentVersion } = await adminClient
-      .from('curriculum_versions')
-      .select('name, language_id')
-      .eq('id', id)
-      .single();
-
-    // 检查是否有其他同名版本
-    let shouldDeleteUnits = true;
-    if (currentVersion) {
-      const { data: otherVersions } = await adminClient
-        .from('curriculum_versions')
-        .select('id')
-        .eq('name', currentVersion.name)
-        .eq('language_id', currentVersion.language_id)
-        .neq('id', id);
-      
-      // 如果有其他同名版本，不删除课程单元（共享）
-      if (otherVersions && otherVersions.length > 0) {
-        shouldDeleteUnits = false;
-        console.log(`[删除版本] 发现 ${otherVersions.length} 个同名版本，保留共享课程单元`);
-      }
-    }
-
-    // 仅当没有其他同名版本时，才删除该版本下的课程单元
-    if (shouldDeleteUnits) {
-      await adminClient
-        .from('course_units')
-        .delete()
-        .eq('version_id', id);
-    }
+    // 先删除该版本下的课程单元
+    await adminClient
+      .from('course_units')
+      .delete()
+      .eq('version_id', id);
 
     // 删除版本
     const { error } = await adminClient
