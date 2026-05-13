@@ -270,14 +270,23 @@ export async function DELETE(request: NextRequest) {
       .eq('version_id', id);
 
     // 删除版本
-    const { error } = await adminClient
+    const { data, error } = await adminClient
       .from('curriculum_versions')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .select();
 
     if (error) {
       throw new Error(`删除版本失败: ${error.message}`);
+    }
+
+    // 检查是否真的删除了记录
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { error: '无法删除该版本，可能您不是该版本的创建者' },
+        { status: 403 }
+      );
     }
 
     return NextResponse.json({ success: true });
