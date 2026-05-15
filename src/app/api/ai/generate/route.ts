@@ -200,6 +200,16 @@ ${radarDimensions.map((d, i) => {
     }
   } catch (error) {
     console.error("AI生成失败:", error);
+    
+    // 检查是否是配额限制错误
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('ErrSourceLimit') || errorMessage.includes('资源限制')) {
+      return NextResponse.json(
+        { error: "AI服务暂时繁忙，请稍后重试" },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { error: "AI生成失败，请重试" },
       { status: 500 }

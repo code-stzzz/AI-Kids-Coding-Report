@@ -6,22 +6,31 @@ import { createClient } from '@supabase/supabase-js';
 // 获取课程单元列表
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient();
     const { searchParams } = new URL(request.url);
     const languageId = searchParams.get('language_id');
     const versionId = searchParams.get('version_id');
 
-    let query = supabase
+    // 使用 service role key 绕过 RLS
+    const serviceRoleKey = getSupabaseServiceRoleKey();
+    const { url } = getSupabaseCredentials();
+    
+    if (!serviceRoleKey) {
+      return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 });
+    }
+
+    const adminClient = createClient(url, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+
+    let query = adminClient
       .from('course_units')
       .select('*')
       .eq('is_active', true)
       .order('period_number');
 
     if (versionId) {
-      // 按版本查询
       query = query.eq('version_id', versionId);
     } else if (languageId) {
-      // 按语言查询（查询该语言下所有版本的课程单元）
       query = query.eq('language_id', languageId);
     }
 

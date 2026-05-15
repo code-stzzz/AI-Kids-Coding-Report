@@ -96,10 +96,7 @@ export async function GET(request: NextRequest) {
 // 创建学习报告
 export async function POST(request: NextRequest) {
   try {
-    console.log('[API /reports] 收到 POST 请求');
-    
     const token = getAuthToken(request);
-    console.log('[API /reports] Token 存在:', !!token);
     
     if (!token) {
       return NextResponse.json({ error: '请先登录' }, { status: 401 });
@@ -107,7 +104,6 @@ export async function POST(request: NextRequest) {
 
     // 从 token 中解析用户 ID
     const userId = getUserIdFromToken(token);
-    console.log('[API /reports] 用户 ID:', userId);
     
     if (!userId) {
       return NextResponse.json({ error: '无效的认证信息' }, { status: 401 });
@@ -115,21 +111,16 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdminClient();
     const body = await request.json();
-    console.log('[API /reports] 请求体:', JSON.stringify(body, null, 2).slice(0, 500));
 
     // 从课程单元获取 language_id
-    console.log('[API /reports] 查询课程单元:', body.course_unit_id);
-    
     const { data: courseUnit, error: courseError } = await supabase
       .from('course_units')
       .select('language_id')
       .eq('id', body.course_unit_id)
       .single();
 
-    console.log('[API /reports] 课程单元查询结果:', { courseUnit, courseError });
-
     if (!courseUnit?.language_id) {
-      console.error('[API /reports] 课程单元不存在或缺少 language_id');
+      console.error('[Reports] 课程单元不存在或缺少 language_id:', courseError);
       return NextResponse.json({ error: '课程单元不存在' }, { status: 400 });
     }
 
