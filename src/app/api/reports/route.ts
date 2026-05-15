@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
       .insert({
         student_id: body.student_id,
         course_unit_id: body.course_unit_id,
+        language_id: courseUnit.language_id,
         radar_dimensions: body.radar_dimensions,
         core_strengths: body.core_strengths,
         areas_to_improve: body.areas_to_improve,
@@ -137,6 +138,7 @@ export async function POST(request: NextRequest) {
         improvement_plan_2: body.improvement_plan_2,
         improvement_plan_3: body.improvement_plan_3,
         competition_plans: body.competition_plans,
+        is_completed: true,
         user_id: userId,
       })
       .select()
