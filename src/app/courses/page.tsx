@@ -236,7 +236,8 @@ export default function CoursesPage() {
       }
     } catch (error) {
       console.error('删除版本失败:', error);
-      alert('删除失败，请重试');
+      const message = error instanceof Error ? error.message : '删除失败，请重试';
+      alert(message);
     }
   };
 

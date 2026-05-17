@@ -263,18 +263,67 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: '缺少版本 ID' }, { status: 400 });
     }
 
-    // 先删除该版本下的课程单元
-    await adminClient
+    // 先检查版本是否存在，以及是否属于当前用户
+    const { data: existingVersion, error: checkError } = await adminClient
+      .from('curriculum_versions')
+      .select('id, user_id, name')
+      .eq('id', id)
+      .single();
+
+    if (checkError || !existingVersion) {
+      return NextResponse.json({ error: '版本不存在' }, { status: 404 });
+    }
+
+    // 权限检查：允许删除自己创建的版本或系统创建的版本（user_id 为空或全零）
+    const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
+    const versionOwner = existingVersion.user_id;
+    const isOwner = versionOwner === userId;
+    const isSystemVersion = !versionOwner || versionOwner === ZERO_UUID;
+
+    if (!isOwner && !isSystemVersion) {
+      return NextResponse.json(
+        { error: '无法删除该版本，您不是该版本的创建者' },
+        { status: 403 }
+      );
+    }
+
+    // 检查该版本下的课程单元是否被学习报告引用
+    const { data: courseUnits } = await adminClient
+      .from('course_units')
+      .select('id')
+      .eq('version_id', id);
+
+    if (courseUnits && courseUnits.length > 0) {
+      const unitIds = courseUnits.map(u => u.id);
+      const { count: reportCount } = await adminClient
+        .from('study_reports')
+        .select('*', { count: 'exact', head: true })
+        .in('course_unit_id', unitIds);
+
+      if (reportCount && reportCount > 0) {
+        return NextResponse.json(
+          { error: `该版本下有 ${reportCount} 份学习报告，无法删除。请先删除相关报告后再试。` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 删除该版本下的课程单元
+    const { error: unitsDeleteError } = await adminClient
       .from('course_units')
       .delete()
       .eq('version_id', id);
 
-    // 删除版本
+    if (unitsDeleteError) {
+      console.error('删除课程单元失败:', unitsDeleteError);
+      throw new Error(`删除课程单元失败: ${unitsDeleteError.message}`);
+    }
+
+    // 删除版本（不再过滤 user_id，因为上面已经做了权限检查）
     const { data, error } = await adminClient
       .from('curriculum_versions')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId)
       .select();
 
     if (error) {
@@ -284,8 +333,8 @@ export async function DELETE(request: NextRequest) {
     // 检查是否真的删除了记录
     if (!data || data.length === 0) {
       return NextResponse.json(
-        { error: '无法删除该版本，可能您不是该版本的创建者' },
-        { status: 403 }
+        { error: '删除版本失败，请重试' },
+        { status: 500 }
       );
     }
 
