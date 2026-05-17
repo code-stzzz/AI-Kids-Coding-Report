@@ -461,7 +461,7 @@ export default function GenerateReportsPage() {
                     {/* 操作按钮 */}
                     {selectedCourseUnit ? (
                       <Link
-                        href={`/reports/generate/${student.id}?classId=${selectedClass}&courseUnitId=${selectedCourseUnit}`}
+                        href={`/reports/generate/${student.id}?classId=${selectedClass}&courseUnitId=${selectedCourseUnit}&versionId=${selectedVersion}`}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                           student.hasReport
                             ? 'bg-green-600 text-white hover:bg-green-700'
