@@ -61,6 +61,7 @@ function StudentReportContent() {
   const [selectedCourseUnit, setSelectedCourseUnit] = useState<CourseUnit | null>(null);
   const [selectedNextCourseUnit, setSelectedNextCourseUnit] = useState<CourseUnit | null>(null); // 选择的下阶段课程单元
   const [existingReport, setExistingReport] = useState<StudyReport | null>(null);
+  const [previousReport, setPreviousReport] = useState<StudyReport | null>(null); // 上一个周期的报告，用于雷达图对比
   
   // 下阶段三级选择的状态
   const [nextLanguageId, setNextLanguageId] = useState<string>(''); // 下阶段选择 - 语言
@@ -169,15 +170,19 @@ function StudentReportContent() {
     if (!studentId || !selectedCourseUnit) return;
     
     try {
-      // 获取该学生所有报告
-      const reports = await getReports({ studentId });
+      // 获取该学生所有报告（同语言同版本）
+      const reports = await getReports({ studentId, languageId: selectedCourseUnit.language_id });
+      
       // 找到上一个周期的报告（用于对比）
-      reports.find(r => 
-        r.course_unit?.period_number === selectedCourseUnit.period_number - 1
+      const prevReport = reports.find(r => 
+        r.course_unit?.period_number === selectedCourseUnit.period_number - 1 &&
+        r.course_unit?.version_id === selectedCourseUnit.version_id
       );
-      // 注意：previousReport 状态已移除，此函数保留用于后续可能的对比功能
+      
+      setPreviousReport(prevReport || null);
     } catch (error) {
       console.error('加载上次报告失败:', error);
+      setPreviousReport(null);
     }
   };
 
@@ -817,7 +822,10 @@ function StudentReportContent() {
             {/* 雷达图 */}
             <div className="bg-white rounded-2xl shadow-sm border p-6 sticky top-24">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">能力雷达图</h2>
-              <RadarChart dimensions={radarDimensions} />
+              <RadarChart 
+                dimensions={radarDimensions} 
+                previousDimensions={previousReport?.radar_dimensions}
+              />
               
               {/* 快速导航 */}
               {allStudents.length > 1 && (
