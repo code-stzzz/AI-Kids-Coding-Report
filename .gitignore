@@ -1,5 +1,8 @@
 .next
 
+# Assets (debug screenshots and course outlines)
+assets/
+
 # Dependencies
 node_modules/
 .pnp
