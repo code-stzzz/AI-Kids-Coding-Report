@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         student:students(name, student_number),
-        course_unit:course_units(name, period_number)
+        course_unit:course_units(name, period_number, version_id)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });

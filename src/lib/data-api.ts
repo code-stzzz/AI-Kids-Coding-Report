@@ -463,7 +463,7 @@ export interface StudyReport {
   created_at: string;
   updated_at: string;
   student?: { name: string; student_number: string };
-  course_unit?: { name: string; period_number: number };
+  course_unit?: { name: string; period_number: number; version_id: string };
 }
 
 export async function getReports(params?: {
