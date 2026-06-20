@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const studentId = searchParams.get('student_id');
     const courseUnitId = searchParams.get('course_unit_id');
+    const languageId = searchParams.get('language_id');
 
     let query = supabase
       .from('study_reports')
@@ -75,6 +76,10 @@ export async function GET(request: NextRequest) {
 
     if (courseUnitId) {
       query = query.eq('course_unit_id', courseUnitId);
+    }
+
+    if (languageId) {
+      query = query.eq('language_id', languageId);
     }
 
     const { data, error } = await query;

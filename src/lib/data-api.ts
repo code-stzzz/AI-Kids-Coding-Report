@@ -469,10 +469,12 @@ export interface StudyReport {
 export async function getReports(params?: {
   studentId?: string;
   courseUnitId?: string;
+  languageId?: string;
 }): Promise<StudyReport[]> {
   const searchParams = new URLSearchParams();
   if (params?.studentId) searchParams.set('student_id', params.studentId);
   if (params?.courseUnitId) searchParams.set('course_unit_id', params.courseUnitId);
+  if (params?.languageId) searchParams.set('language_id', params.languageId);
   
   const url = `/api/reports${searchParams.toString() ? `?${searchParams}` : ''}`;
   const res = await authFetch(url);
