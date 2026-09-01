@@ -549,20 +549,20 @@ export function PosterGenerator({ data, onClose }: PosterGeneratorProps) {
             }}>
               {data.improvementPlan1 && (
                 <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <span style={{ color: '#9333ea', fontWeight: 'bold' }}>•</span>
-                  <span>{data.improvementPlan1}</span>
+                  <span style={{ color: '#9333ea', fontWeight: 'bold', flexShrink: 0 }}>•</span>
+                  <span style={{ flex: 1, minWidth: 0, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{data.improvementPlan1}</span>
                 </div>
               )}
               {data.improvementPlan2 && (
                 <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <span style={{ color: '#9333ea', fontWeight: 'bold' }}>•</span>
-                  <span>{data.improvementPlan2}</span>
+                  <span style={{ color: '#9333ea', fontWeight: 'bold', flexShrink: 0 }}>•</span>
+                  <span style={{ flex: 1, minWidth: 0, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{data.improvementPlan2}</span>
                 </div>
               )}
               {data.improvementPlan3 && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <span style={{ color: '#9333ea', fontWeight: 'bold' }}>•</span>
-                  <span>{data.improvementPlan3}</span>
+                  <span style={{ color: '#9333ea', fontWeight: 'bold', flexShrink: 0 }}>•</span>
+                  <span style={{ flex: 1, minWidth: 0, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{data.improvementPlan3}</span>
                 </div>
               )}
             </div>

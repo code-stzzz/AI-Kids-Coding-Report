@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { 
   ArrowLeft, 
   Plus, 
@@ -362,9 +363,9 @@ export default function CoursesPage() {
       <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <a href="/" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <Link href="/" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </a>
+            </Link>
             <div>
               <h1 className="text-xl font-bold text-gray-900">课程管理</h1>
               <p className="text-sm text-gray-500">管理编程课程和版本</p>
