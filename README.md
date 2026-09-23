@@ -2,6 +2,8 @@
 
 这是一个基于 [Next.js 16](https://nextjs.org) + [shadcn/ui](https://ui.shadcn.com) 的全栈应用项目，由扣子编程 CLI 创建。
 
+AI 接口管理支持 DeepSeek、通义千问、硅基流动及其他兼容接口，保留扣子内置模型。部署启用步骤见 [AI 接口管理说明](docs/AI_PROVIDER_SETUP.md)。
+
 ## 快速开始
 
 ### 启动开发服务器

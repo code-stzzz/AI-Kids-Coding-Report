@@ -13,7 +13,8 @@ import {
   Home,
   Layers,
   Users,
-  FileText
+  FileText,
+  Settings2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +32,7 @@ const navItems = [
   { href: '/courses', label: '课程管理', icon: Layers },
   { href: '/classes', label: '班级管理', icon: Users },
   { href: '/reports', label: '历史报告', icon: FileText },
+  { href: '/settings/ai', label: 'AI 接口', icon: Settings2 },
 ];
 
 export function Header() {

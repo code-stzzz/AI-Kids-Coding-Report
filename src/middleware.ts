@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // 需要登录的路径
-  const protectedPaths = ['/classes', '/students', '/reports', '/courses'];
+  const protectedPaths = ['/classes', '/students', '/reports', '/courses', '/settings'];
   const isProtectedPath = protectedPaths.some(path => 
     request.nextUrl.pathname.startsWith(path)
   );

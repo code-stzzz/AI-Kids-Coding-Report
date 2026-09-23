@@ -20,7 +20,6 @@ async function getAccessToken(): Promise<string | null> {
       const { data: { session } } = await supabaseClient.getSession();
       console.log('[data-api] 从 Supabase 客户端获取 session:', session ? '有 session' : '无 session');
       if (session?.access_token) {
-        console.log('[data-api] Token 前50字符:', session.access_token.substring(0, 50));
         return session.access_token;
       }
     }
@@ -51,7 +50,6 @@ async function getAccessToken(): Promise<string | null> {
         try {
           const session = JSON.parse(sessionStr);
           if (session?.access_token) {
-            console.log('[data-api] 从 localStorage 获取到 token，前50字符:', session.access_token.substring(0, 50));
             return session.access_token;
           }
         } catch (e) {
@@ -69,7 +67,7 @@ async function getAccessToken(): Promise<string | null> {
 }
 
 // 带认证的 fetch
-async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const token = await getAccessToken();
   const headers: HeadersInit = {
     ...options.headers,

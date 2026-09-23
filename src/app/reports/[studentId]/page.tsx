@@ -1,4 +1,5 @@
 'use client';
+import { authFetch } from '@/lib/data-api';
 
 import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
@@ -222,7 +223,7 @@ export default function ReportEditorPage({ params }: { params: Promise<PageParam
     setGeneratingError(null);
     
     try {
-      const response = await fetch('/api/ai/generate', {
+      const response = await authFetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
