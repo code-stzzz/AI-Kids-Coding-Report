@@ -445,6 +445,7 @@ export interface RadarDimension {
 
 export interface StudyReport {
   id: string;
+  language_id?: string;
   user_id: string;
   student_id: string;
   course_unit_id: string;
@@ -460,8 +461,8 @@ export interface StudyReport {
   competition_plans: string | null;
   created_at: string;
   updated_at: string;
-  student?: { name: string; student_number: string };
-  course_unit?: { name: string; period_number: number; version_id: string };
+  student?: { name: string; student_number: string; class_id?: string };
+  course_unit?: { name: string; period_number: number; version_id: string | null; language_id?: string; current_stage_content?: string; next_stage_content?: string | null };
 }
 
 export async function getReports(params?: {
@@ -477,6 +478,7 @@ export async function getReports(params?: {
   const url = `/api/reports${searchParams.toString() ? `?${searchParams}` : ''}`;
   const res = await authFetch(url);
   const json = await res.json();
+  if (!res.ok) throw new Error(json.error || '历史报告加载失败，请稍后重试');
   return json.data || [];
 }
 

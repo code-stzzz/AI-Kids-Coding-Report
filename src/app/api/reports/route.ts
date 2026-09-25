@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
       .from('study_reports')
       .select(`
         *,
-        student:students(name, student_number),
-        course_unit:course_units(name, period_number, version_id)
+        student:students(name, student_number, class_id),
+        course_unit:course_units(name, period_number, version_id, language_id, current_stage_content, next_stage_content)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });

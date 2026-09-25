@@ -11,100 +11,48 @@ import {
   Eye,
   Plus
 } from 'lucide-react';
-import { 
-  languageApi,
-  classApi,
-  studentApi,
-  reportApi,
-  courseApi,
-  ProgrammingLanguage,
-  Class,
-  Student,
-  StudyReport
-} from '@/lib/local-storage';
+import { type ProgrammingLanguage, type Class } from '@/lib/data-api';
+import { loadReportHistory, historyEditUrl, type HistoryReport } from '@/lib/report-history';
+import { useUser } from '@/components/providers/UserProvider';
 import { PosterGenerator } from '@/components/PosterGenerator';
 
-interface ReportWithDetails extends StudyReport {
-  student?: Student;
-  class?: Class;
-  language?: ProgrammingLanguage;
-}
-
 export default function ReportsPage() {
-  const [reports, setReports] = useState<ReportWithDetails[]>([]);
+  const [reports, setReports] = useState<HistoryReport[]>([]);
   const [languages, setLanguages] = useState<ProgrammingLanguage[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
+  const { user, loading: userLoading } = useUser();
+  const userId = user?.id;
+  const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [previewReport, setPreviewReport] = useState<ReportWithDetails | null>(null);
-  const [courseUnitData, setCourseUnitData] = useState<Record<string, { name: string; current_stage_content: string; next_stage_content: string }>>({});
-
+  const [previewReport, setPreviewReport] = useState<HistoryReport | null>(null);
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [langData, classData, studentData, reportData] = await Promise.all([
-        languageApi.getAll(),
-        classApi.getAll(),
-        studentApi.getAll(),
-        reportApi.getAll()
-      ]);
-      
-      setLanguages(langData);
-      setClasses(classData);
-      setStudents(studentData);
-      
-      // Fetch course unit data
-      const courseUnitIds = [...new Set(reportData.map(r => r.course_unit_id))];
-      const courseUnitMap: Record<string, { name: string; current_stage_content: string; next_stage_content: string }> = {};
-      for (const id of courseUnitIds) {
-        try {
-          const course = await courseApi.getById(id);
-          courseUnitMap[id] = {
-            name: course.name,
-            current_stage_content: course.current_stage_content,
-            next_stage_content: course.next_stage_content
-          };
-        } catch {
-          // Skip if course not found
-        }
-      }
-      setCourseUnitData(courseUnitMap);
-
-      // Enrich reports with student/class/language info
-      const enrichedReports = reportData.map(report => {
-        const student = studentData.find(s => s.id === report.student_id);
-        const cls = student ? classData.find(c => c.id === student.class_id) : undefined;
-        const language = cls ? langData.find(l => l.id === cls.language_id) : undefined;
-        return {
-          ...report,
-          student,
-          class: cls,
-          language
-        } as ReportWithDetails;
-      });
-
-      // Sort by date
-      enrichedReports.sort((a, b) => 
-        new Date(b.generated_at || b.created_at).getTime() - 
-        new Date(a.generated_at || a.created_at).getTime()
-      );
-      
-      setReports(enrichedReports);
-      
-      if (langData.length > 0) {
-        setSelectedLanguage(langData[0].id);
-      }
-    } catch (error) {
-      console.error('加载数据失败:', error);
-    } finally {
+    let cancelled = false;
+    setReports([]);
+    setPreviewReport(null);
+    setError(null);
+    setLoading(true);
+    if (userLoading) return;
+    if (!userId) {
       setLoading(false);
+      return;
     }
-  };
+    loadReportHistory().then(data => {
+      if (cancelled) return;
+      setReports(data.reports);
+      setClasses(data.classes);
+      setLanguages(data.languages);
+      setSelectedLanguage('');
+      setSelectedClass('');
+    }).catch(() => {
+      if (!cancelled) setError('历史报告加载失败，请检查网络或重新登录后重试。');
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [userLoading, userId, retry]);
 
   const filteredReports = reports.filter(r => {
     if (selectedLanguage && r.language?.id !== selectedLanguage) return false;
@@ -112,14 +60,14 @@ export default function ReportsPage() {
     return true;
   });
 
-  const filteredClasses = classes.filter(c => c.language_id === selectedLanguage);
+  const filteredClasses = classes.filter(c => !selectedLanguage || c.language_id === selectedLanguage);
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '未知日期';
     return new Date(dateStr).toLocaleDateString('zh-CN');
   };
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -191,7 +139,6 @@ export default function ReportsPage() {
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                disabled={!selectedLanguage}
                 className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
               >
                 <option value="">全部</option>
@@ -206,12 +153,22 @@ export default function ReportsPage() {
         </div>
 
         {/* Report List */}
-        {filteredReports.length === 0 ? (
+        {!user ? (
+          <div className="bg-white rounded-2xl border p-12 text-center">
+            <p className="mb-4">请先登录后查看你的历史报告。</p>
+            <Link href="/auth" className="text-blue-600">前往登录</Link>
+          </div>
+        ) : error ? (
+          <div role="alert" className="bg-white rounded-2xl border p-12 text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button onClick={() => setRetry(value => value + 1)} className="text-blue-600">重新加载</button>
+          </div>
+        ) : filteredReports.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border p-12 text-center">
             <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">暂无学习报告</h3>
             <p className="text-gray-500 mb-4">
-              开始为学生生成第一份学习报告吧
+              {reports.length ? '当前筛选条件下没有报告，请切换语言或班级。' : '保存学习报告后，会在这里显示。'}
             </p>
             <Link
               href="/"
@@ -238,7 +195,7 @@ export default function ReportsPage() {
                           {report.student?.name || '未知学生'}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {report.language?.name} · {report.class?.name} · {courseUnitData[report.course_unit_id]?.name || '未知课程'}
+                          {report.language?.name} · {report.class?.name} · {report.course.name}
                         </p>
                       </div>
                     </div>
@@ -246,7 +203,7 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 text-gray-500 text-sm">
                         <Calendar className="w-4 h-4" />
-                        {formatDate(report.generated_at || report.created_at)}
+                        {formatDate(report.created_at)}
                       </div>
                       <button
                         onClick={() => setPreviewReport(report)}
@@ -256,7 +213,7 @@ export default function ReportsPage() {
                         预览
                       </button>
                       <Link
-                        href={`/reports/${report.student_id}`}
+                        href={historyEditUrl(report)}
                         className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
                       >
                         <ChevronRight className="w-4 h-4" />
@@ -320,16 +277,20 @@ export default function ReportsPage() {
           data={{
             studentName: previewReport.student?.name || '',
             languageName: previewReport.language?.name || '',
-            courseUnitName: courseUnitData[previewReport.course_unit_id]?.name || '',
+            courseUnitName: previewReport.course.name,
             radarDimensions: previewReport.radar_dimensions,
-            currentStageContent: courseUnitData[previewReport.course_unit_id]?.current_stage_content || '',
-            nextStageContent: courseUnitData[previewReport.course_unit_id]?.next_stage_content || '',
+            currentStageContent: previewReport.course.current_stage_content,
+            nextStageContent: previewReport.course.next_stage_content,
             coreStrengths: previewReport.core_strengths,
             areasToImprove: previewReport.areas_to_improve,
-            progressDescription: previewReport.progress_description,
-            improvementDescription: previewReport.improvement_description,
-            encouragementMessage: previewReport.encouragement_message,
-            generatedAt: formatDate(previewReport.generated_at)
+            progressDescription: previewReport.progress_description || '',
+            improvementDescription: previewReport.improvement_description || '',
+            encouragementMessage: previewReport.encouragement_message || '',
+            improvementPlan1: previewReport.improvement_plan_1 || '',
+            improvementPlan2: previewReport.improvement_plan_2 || '',
+            improvementPlan3: previewReport.improvement_plan_3 || '',
+            competitionPlans: previewReport.competition_plans || '',
+            generatedAt: formatDate(previewReport.created_at)
           }}
           onClose={() => setPreviewReport(null)}
         />
