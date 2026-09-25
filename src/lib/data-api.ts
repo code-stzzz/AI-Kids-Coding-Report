@@ -477,8 +477,11 @@ export async function getReports(params?: {
   
   const url = `/api/reports${searchParams.toString() ? `?${searchParams}` : ''}`;
   const res = await authFetch(url);
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error || '历史报告加载失败，请稍后重试');
+  if (res.status === 401 || res.status === 403) throw new Error('登录状态已失效，请重新登录后查看历史报告。');
+  const json = await res.json().catch(() => {
+    throw new Error(`报告服务返回异常响应（${res.status}），请稍后重试。`);
+  });
+  if (!res.ok) throw new Error(`${json.error || '报告服务暂时无法读取数据，请稍后重试'}（${res.status}）`);
   return json.data || [];
 }
 

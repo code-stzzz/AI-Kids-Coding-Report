@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         student:students(name, student_number, class_id),
-        course_unit:course_units(name, period_number, version_id, language_id, current_stage_content, next_stage_content)
+        course_unit:course_units(name, period_number, version_id, language_id, current_stage_content)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -85,6 +85,10 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
+      console.error('获取学习报告失败:', error);
+      if (['42703', 'PGRST200', 'PGRST204'].includes(error.code)) {
+        return NextResponse.json({ error: '报告查询与数据库结构不匹配，请联系管理员更新网站。' }, { status: 500 });
+      }
       throw new Error(`获取学习报告失败: ${error.message}`);
     }
 

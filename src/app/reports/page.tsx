@@ -46,8 +46,10 @@ export default function ReportsPage() {
       setLanguages(data.languages);
       setSelectedLanguage('');
       setSelectedClass('');
-    }).catch(() => {
-      if (!cancelled) setError('历史报告加载失败，请检查网络或重新登录后重试。');
+    }).catch((cause: unknown) => {
+      if (!cancelled) setError(cause instanceof Error && !(cause instanceof TypeError)
+        ? cause.message
+        : '无法连接报告服务，请检查网络后重试。');
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });
