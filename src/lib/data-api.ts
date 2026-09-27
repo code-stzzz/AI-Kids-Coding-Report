@@ -132,6 +132,17 @@ export async function getLanguages(): Promise<ProgrammingLanguage[]> {
   return json.data || [];
 }
 
+export async function createLanguage(name: string): Promise<ProgrammingLanguage> {
+  const res = await authFetch('/api/languages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  const json = await res.json().catch(() => { throw new Error('语言服务暂时不可用，请稍后重试。'); });
+  if (!res.ok) throw new Error(json.error || '添加编程语言失败');
+  return json.data;
+}
+
 // ==================== 课程版本 ====================
 
 export interface CurriculumVersion {

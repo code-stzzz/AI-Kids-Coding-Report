@@ -35,6 +35,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AddLanguage } from '@/components/AddLanguage';
 
 export default function CoursesPage() {
   const [languages, setLanguages] = useState<ProgrammingLanguage[]>([]);
@@ -377,6 +378,13 @@ export default function CoursesPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* 选择器区域 */}
         <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+          <AddLanguage onCreated={language => {
+            setLanguages(current => [...current, language].sort((a, b) => a.name.localeCompare(b.name)));
+            setSelectedVersion('');
+            setVersions([]);
+            setCourses([]);
+            setSelectedLanguage(language.id);
+          }} />
           <div className="flex flex-wrap items-center gap-4">
             {/* 编程语言选择 */}
             <div className="flex-1 min-w-[200px]">
