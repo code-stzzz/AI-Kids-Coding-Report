@@ -1,5 +1,6 @@
 'use client';
 import { authFetch } from '@/lib/data-api';
+import { reportStudentQueue } from '@/lib/student-selection';
 
 import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
@@ -52,6 +53,7 @@ function StudentReportContent() {
   const classId = searchParams.get('classId');
   const courseUnitIdParam = searchParams.get('courseUnitId');
   const versionIdParam = searchParams.get('versionId'); // 从 URL 获取版本 ID
+  const studentIdsParam = searchParams.get('studentIds');
   
   const [student, setStudent] = useState<Student | null>(null);
   const [cls, setCls] = useState<Class | null>(null);
@@ -282,7 +284,7 @@ function StudentReportContent() {
       
       // 加载该班级所有学生（用于导航）
       if (classId) {
-        const students = await getStudents(classId);
+        const students = reportStudentQueue(await getStudents(classId), studentIdsParam, studentId);
         students.sort((a, b) => 
           (a.student_number || '').localeCompare(b.student_number || '', 'zh-CN', { numeric: true })
         );
@@ -322,6 +324,7 @@ function StudentReportContent() {
     if (classId) params.set('classId', classId);
     if (courseUnitId) params.set('courseUnitId', courseUnitId);
     if (selectedVersionId) params.set('versionId', selectedVersionId);
+    if (studentIdsParam !== null) params.set('studentIds', studentIdsParam);
     const queryString = params.toString();
     
     if (direction === 'prev' && currentStudentIndex > 0) {
@@ -842,6 +845,7 @@ function StudentReportContent() {
                           if (classId) params.set('classId', classId);
                           if (courseUnitId) params.set('courseUnitId', courseUnitId);
                           if (selectedVersionId) params.set('versionId', selectedVersionId);
+                          if (studentIdsParam !== null) params.set('studentIds', studentIdsParam);
                           router.push(`/reports/generate/${s.id}?${params.toString()}`);
                         }}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${

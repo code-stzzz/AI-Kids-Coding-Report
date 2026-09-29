@@ -1,6 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { filterReportStudents, type StudentStatusFilter } from '@/lib/student-selection';
+import { StudentStatusButton } from '@/components/StudentStatusButton';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
@@ -36,6 +39,12 @@ interface CurriculumVersion {
 }
 
 export default function GenerateReportsPage() {
+  const router = useRouter();
+  const [statusFilter, setStatusFilter] = useState<StudentStatusFilter>('active');
+  const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [loadError, setLoadError] = useState('');
+  const requestId = useRef(0);
   const [languages, setLanguages] = useState<ProgrammingLanguage[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [versions, setVersions] = useState<CurriculumVersion[]>([]);
@@ -160,6 +169,11 @@ export default function GenerateReportsPage() {
 
   // 当选择班级后，加载学生数据
   useEffect(() => {
+    requestId.current++;
+    setStudents([]);
+    setAllReports([]);
+    setSelectedIds([]);
+    setLoadError('');
     if (selectedClass && selectedVersion) {
       loadStudentsAndReports();
       loadCourseUnits();
@@ -178,6 +192,7 @@ export default function GenerateReportsPage() {
 
   const loadStudentsAndReports = async () => {
     if (!selectedClass) return;
+    const currentRequest = ++requestId.current;
     
     setStudentsLoading(true);
     try {
@@ -186,6 +201,7 @@ export default function GenerateReportsPage() {
         getStudents(selectedClass),
         getReports()
       ]);
+      if (currentRequest !== requestId.current) return;
 
       // 保存所有报告数据
       setAllReports(reportData.map(r => ({
@@ -206,9 +222,11 @@ export default function GenerateReportsPage() {
         reportId: undefined
       })));
     } catch (error) {
+      if (currentRequest !== requestId.current) return;
+      setLoadError(error instanceof Error ? error.message : '加载学生失败，请重试');
       console.error('加载学生数据失败:', error);
     } finally {
-      setStudentsLoading(false);
+      if (currentRequest === requestId.current) setStudentsLoading(false);
     }
   };
 
@@ -231,8 +249,13 @@ export default function GenerateReportsPage() {
   const filteredClasses = classes.filter(c => c.language_id === selectedLanguage);
 
   // 统计完成情况
-  const completedCount = students.filter(s => s.hasReport).length;
-  const totalCount = students.length;
+  const visibleStudents = filterReportStudents(students, statusFilter, search);
+  const selectedStudents = visibleStudents.filter(s => selectedIds.includes(s.id));
+  const completedCount = visibleStudents.filter(s => s.hasReport).length;
+  const totalCount = visibleStudents.length;
+  const reportUrl = (id: string, ids: string[]) => `/reports/generate/${encodeURIComponent(id)}?${new URLSearchParams({
+    classId: selectedClass, courseUnitId: selectedCourseUnit, versionId: selectedVersion, studentIds: ids.join(','),
+  })}`;
   
   // 获取选中的课程单元信息
   const selectedUnit = courseUnits.find(c => c.id === selectedCourseUnit);
@@ -408,14 +431,29 @@ export default function GenerateReportsPage() {
               )}
             </div>
 
-            {studentsLoading ? (
+            <div className="flex flex-wrap items-end gap-3 mb-4">
+              <label className="text-sm">学生状态
+                <select className="block border rounded-lg px-3 py-2 mt-1" value={statusFilter} onChange={e => { setStatusFilter(e.target.value as StudentStatusFilter); setSelectedIds([]); }}>
+                  <option value="active">在读</option><option value="completed">已结课</option><option value="all">全部</option>
+                </select>
+              </label>
+              <label className="text-sm">搜索学生
+                <input className="block border rounded-lg px-3 py-2 mt-1" placeholder="姓名或学号" value={search} onChange={e => { setSearch(e.target.value); setSelectedIds([]); }} />
+              </label>
+              <label className="flex gap-2 items-center py-2 text-sm">
+                <input type="checkbox" disabled={studentsLoading || !visibleStudents.length} checked={visibleStudents.length > 0 && selectedStudents.length === visibleStudents.length} onChange={e => setSelectedIds(e.target.checked ? visibleStudents.map(s => s.id) : [])} />全选当前结果
+              </label>
+              <button disabled={!selectedCourseUnit || !selectedStudents.length || studentsLoading} className="bg-blue-600 text-white rounded-lg px-4 py-2 disabled:opacity-40" onClick={() => router.push(reportUrl(selectedStudents[0].id, selectedStudents.map(s => s.id)))}>为勾选学生制作报告（{selectedStudents.length}）</button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">找到 {visibleStudents.length} 人。标记结课不会删除学生或历史报告；选择“已结课”可补做报告。</p>
+            {loadError ? <p role="alert" className="text-red-600">{loadError} <button className="underline" onClick={() => { setLoadError(''); loadStudentsAndReports(); }}>重新加载</button></p> : studentsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
               </div>
-            ) : students.length === 0 ? (
+            ) : visibleStudents.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>该班级暂无学生</p>
+                <p>{students.length ? '没有符合筛选条件的学生，请调整状态或搜索内容。' : '该班级暂无学生'}</p>
                 <Link 
                   href="/classes" 
                   className="text-blue-600 hover:underline text-sm mt-2 inline-block"
@@ -425,7 +463,7 @@ export default function GenerateReportsPage() {
               </div>
             ) : (
               <div className="grid gap-3">
-                {students.map((student, index) => (
+                {visibleStudents.map((student, index) => (
                   <div
                     key={student.id}
                     className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
@@ -435,6 +473,7 @@ export default function GenerateReportsPage() {
                     }`}
                   >
                     <div className="flex items-center gap-4">
+                      <input type="checkbox" aria-label={`选择${student.name}`} checked={selectedIds.includes(student.id)} onChange={e => setSelectedIds(current => e.target.checked ? [...current, student.id] : current.filter(id => id !== student.id))} />
                       {/* 完成状态图标 */}
                       {student.hasReport ? (
                         <CheckCircle className="w-6 h-6 text-green-600" />
@@ -459,9 +498,13 @@ export default function GenerateReportsPage() {
                     </div>
 
                     {/* 操作按钮 */}
+                    <StudentStatusButton student={student} onChanged={updated => {
+                      setStudents(current => current.map(s => s.id === updated.id ? { ...s, ...updated } : s));
+                      setSelectedIds(current => current.filter(id => id !== updated.id));
+                    }} />
                     {selectedCourseUnit ? (
                       <Link
-                        href={`/reports/generate/${student.id}?classId=${selectedClass}&courseUnitId=${selectedCourseUnit}&versionId=${selectedVersion}`}
+                        href={reportUrl(student.id, [student.id])}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                           student.hasReport
                             ? 'bg-green-600 text-white hover:bg-green-700'

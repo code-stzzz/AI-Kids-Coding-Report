@@ -371,6 +371,8 @@ export async function deleteClass(id: string): Promise<void> {
 // ==================== 学生 ====================
 
 export interface Student {
+  enrollment_status?: 'active' | 'completed';
+  completed_at?: string | null;
   id: string;
   user_id: string;
   class_id: string;
@@ -384,7 +386,18 @@ export interface Student {
 export async function getStudents(classId: string): Promise<Student[]> {
   const res = await authFetch(`/api/students?class_id=${classId}`);
   const json = await res.json();
+  if (!res.ok) throw new Error(json.error || '加载学生失败');
   return json.data || [];
+}
+
+export async function setStudentStatus(id: string, status: 'active' | 'completed'): Promise<Student> {
+  const res = await authFetch('/api/students/status', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, status }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || '更新学生状态失败');
+  return json.data;
 }
 
 export async function getStudentById(id: string): Promise<Student | null> {

@@ -1,4 +1,5 @@
 'use client';
+import { StudentStatusButton } from '@/components/StudentStatusButton';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -488,6 +489,7 @@ export default function ClassesPage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
+                              <StudentStatusButton student={student} onChanged={updated => setStudents(current => current.map(s => s.id === updated.id ? updated : s))} />
                               <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
                                 第{student.learning_cycle}周期
                               </span>
