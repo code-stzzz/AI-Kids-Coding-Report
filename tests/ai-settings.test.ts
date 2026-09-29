@@ -52,6 +52,7 @@ const rows = new Map<string, Row>();
 let providerStatus = 200;
 let providerContent = JSON.stringify(report);
 let providerCalls = 0;
+let sentMessages = '';
 
 before(() => {
   process.env.AI_CONFIG_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString("base64");
@@ -64,6 +65,7 @@ before(() => {
     const url = new URL(String(input));
     const headers = new Headers(init?.headers);
     if (url.hostname === "api.deepseek.com") {
+      sentMessages = String(init?.body);
       providerCalls++;
       assert.equal(headers.get("authorization"), `Bearer ${secret}`);
       assert.equal(init?.redirect, "error");
@@ -100,6 +102,7 @@ before(() => {
           })
         : Response.json({ message: "Invalid token" }, { status: 401 });
     }
+    if (url.pathname === '/rest/v1/ai_report_prompts') return Response.json([{ prompt: '按我的自定义规则写作', revision: 1 }]);
     assert.equal(url.pathname, "/rest/v1/ai_provider_settings");
     assert.equal(headers.get("authorization"), "Bearer test-service-role");
     const userId = url.searchParams.get("user_id")?.replace(/^eq\./, "");
@@ -301,6 +304,7 @@ test("API verifies the token, enforces ownership, persists selection and uses it
     })),
   };
   assert.deepEqual(await (await generate(request(input))).json(), report);
+  assert.ok(sentMessages.includes('按我的自定义规则写作'));
   providerContent = '{"progressDescription":"incomplete"}';
   assert.equal((await generate(request(input))).status, 502);
   providerContent = JSON.stringify(report);

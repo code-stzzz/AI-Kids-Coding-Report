@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { buildReportMessages } from "@/lib/ai/prompt";
+import { readPrompt } from "@/lib/ai/prompt-settings";
 import { generateInput, parseReport } from "@/lib/ai/validation";
 import { invokeCompatible } from "@/lib/ai/provider";
 import {
@@ -26,7 +27,8 @@ export async function POST(request: NextRequest) {
         400,
       );
     const settings = await readSettings(userId);
-    const messages = buildReportMessages(input.data);
+    const prompt = await readPrompt(userId);
+    const messages = buildReportMessages(input.data, prompt.prompt);
     let content: string;
     if (settings.activeProfileId) {
       const profile = settings.profiles.find(

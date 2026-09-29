@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { ReportPromptSettings } from '@/components/ReportPromptSettings';
 import {
   ArrowLeft,
   Check,
@@ -249,7 +250,7 @@ export default function AISettingsPage() {
             <Settings2 className="h-4 w-4" />
             模型与连接
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">AI 接口管理</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">AI 接口与提示词管理</h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
             连接你自己的 AI 服务，为学习报告选择合适的模型。配置仅用于当前账号。
           </p>
@@ -266,6 +267,8 @@ export default function AISettingsPage() {
           </p>
         </div>
       </section>
+
+      <ReportPromptSettings key={user.id} />
 
       {error && (
         <div
